@@ -1,4 +1,4 @@
-[Tonino Serial Protocol](http://my-tonino.com)
+[Tonino Serial Protocol](https://github.com/myTonino/Tonino-Firmware/blob/master/Tonino-Serial.md)
 ==============================================
 
 The Tonino firmware implements a simple protocol that can be used to adjust basic settings of the [Tonino roast color meter.](http://my-tonino.com)
