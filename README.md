@@ -21,4 +21,4 @@ Version History
 License
 -------
 
-[![](http://upload.wikimedia.org/wikipedia/commons/4/42/License_icon-bsd-88x31.png)](LICENCE?raw=true)
+[![](http://upload.wikimedia.org/wikipedia/commons/4/42/License_icon-bsd-88x31.png)](LICENSE?raw=true)
