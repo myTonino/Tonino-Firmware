@@ -83,14 +83,14 @@
 #define HIGH_PLATE 2  // second, high, bright, red, calibration plate
 
 // thresholds for detecting calibration plates at startup
-#define LOW_RED      2350 // brown disk white reading
-#define LOW_BLUE     1550 // brown disk blue reading
+#define LOW_RED      2320 // brown disk white reading
+#define LOW_BLUE     1470 // brown disk blue reading
 #define HIGH_RED    11300 // red disk white reading
-#define HIGH_BLUE    3250 // red disk blue reading
-#define RED_RANGE_LOW    1000
-#define RED_RANGE_HIGH   4000
-#define BLUE_RANGE_LOW    600
-#define BLUE_RANGE_HIGH  1300
+#define HIGH_BLUE    3050 // red disk blue reading
+#define RED_RANGE_LOW    1200
+#define RED_RANGE_HIGH   4200
+#define BLUE_RANGE_LOW    750
+#define BLUE_RANGE_HIGH  1450
 #define LOW_TARGET  1.5   // brown disk target r/b value
 #define HIGH_TARGET 3.7   // red disk target r/b value
 

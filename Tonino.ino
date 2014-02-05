@@ -46,7 +46,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ------------------------------------------------------------------------------------------
 
-#define VERSION "1 0 4"
+#define VERSION "1 0 5"
 
 #include <tonino.h>
 #include <tonino_lcd.h>
