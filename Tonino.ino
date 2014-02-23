@@ -1,6 +1,6 @@
-// Moppette_xxx.ino
+// Tonino_1_0_6.ino
 //----------------
-// Arduino code for Moppete using
+// Arduino code for Tonino (my-tonino.com) using
 //    - DFRduino Nano
 //    - Adafruit 0.56" 7-segment LCD backpack display
 //      see http://learn.adafruit.com/adafruit-led-backpack/0-dot-56-seven-segment-backpack
@@ -46,7 +46,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ------------------------------------------------------------------------------------------
 
-#define VERSION "1 0 5"
+#define VERSION "1 0 6"
 
 #include <tonino.h>
 #include <tonino_lcd.h>
@@ -309,10 +309,12 @@ boolean calibrate() {
         delay(500);
         if (tSerial.checkCommands()) return false;
       }
+      display.up();
       while (colorSense.isLight()) {
         delay(500);
         if (tSerial.checkCommands()) return false;
       }
+      display.calibration2();
       delay(500);
 
       // scan for calibration plate 2
