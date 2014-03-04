@@ -125,7 +125,7 @@ int32_t TCS3200::fitValue(sensorData *sd, float* raw, uint8_t colorMode) {
 // makes the actual measurement with LEDs on
 // according to current sampling and color mode settings
 // displayAnim if true, the display shows a "progress bar"
-int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean ledon) {
+int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean ledon, boolean removeExtLight) {
   uint8_t animPos = 0;
   sensorData sd;
   for (uint8_t i = 0; i < 5; ++i) {
@@ -174,6 +174,45 @@ int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean
   }
 
   sensorOff();
+
+	if (removeExtLight) {
+		delay(500);
+		digitalWrite(_POWER, HIGH);
+		delay(50);
+		
+		WRITEDEBUG("  ext light: ");
+		uint32_t ds;
+		if (_colorMode & COLOR_WHITE) {
+			setFilter(WHITE_IDX); // white sensor
+			ds = readSingle();
+			WRITEDEBUG(ds);
+			WRITEDEBUG(" ");
+			sd.value[WHITE_IDX] -= ds;
+		}
+		if (_colorMode & COLOR_RED) {
+			setFilter(RED_IDX); // red sensor
+			ds = readSingle();
+			WRITEDEBUG(ds);
+			WRITEDEBUG(" ");
+			sd.value[RED_IDX] -= ds;
+		}
+		if (_colorMode & COLOR_BLUE) {
+			setFilter(BLUE_IDX); // blue sensor
+			ds = readSingle();
+			WRITEDEBUG(ds);
+			WRITEDEBUG(" ");
+			sd.value[BLUE_IDX] -= ds;
+		}
+		if (_colorMode & COLOR_GREEN) {
+			setFilter(GREEN_IDX); // green sensor
+			ds = readSingle();
+			WRITEDEBUG(ds);
+			WRITEDEBUG(" ");
+			sd.value[GREEN_IDX] -= ds;
+		}
+		sensorOff();
+		WRITEDEBUGLN();
+	} // if (removeExtLight)
 
   // calculate T-value according to current formula
   int32_t tval = fitValue(&sd, raw, _colorMode);

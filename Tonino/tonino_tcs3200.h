@@ -54,7 +54,7 @@
 #define FULL_SAMPLING 1
 #define SLOW_SAMPLING 2
 #define NORMAL_SAMPLING 5
-#define QUICK_SAMPLING 50
+#define QUICK_SAMPLING 25
 
 // flags for selecting which colors are measured
 #define COLOR_WHITE  0b00000001
@@ -76,7 +76,7 @@
 #define MAX_CAL_VARS max(NR_SCALE_VALUES,NR_CAL_VALUES)
 
 // threshold for detecting can lifting and replacing
-#define LIGHT_MIN 500
+#define LIGHT_MIN 199
 
 // calibration plates (see isCalibrating method)
 #define LOW_PLATE  1  // first, low, dark, brown, calibration plate
@@ -117,7 +117,7 @@ class TCS3200 {
     // if sd is not NULL it contains the actual raw color measurement values
     // with the T-value at T_IDX
     // if ledon is true, LEDs are switched on during measurement
-    int32_t scan(float *raw = NULL, bool displayAnim = false, sensorData *sd = NULL, boolean ledon = true);
+    int32_t scan(float *raw = NULL, bool displayAnim = false, sensorData *sd = NULL, boolean ledon = true, boolean removeExtLight = false);
     
     // switch sensor completely off
     void sensorOff();

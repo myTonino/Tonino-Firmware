@@ -46,7 +46,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ------------------------------------------------------------------------------------------
 
-#define VERSION "1 0 6"
+#define VERSION "1 0 7"
 
 #include <tonino.h>
 #include <tonino_lcd.h>
@@ -145,10 +145,10 @@ void setup() {
 
   // check whether we are calibrating (detect first calibration plate)
   if (tConfig.getCheckCalInit() && colorSense.isCalibrating() == LOW_PLATE) {
+    display.clear();
     if (calibrate()) {
+      delay(200);
       display.done();
-    } else {
-      display.clear();
     }
   } else {
     // no calibration plate detected, directly scan
@@ -203,6 +203,7 @@ void loop() {
       }
       // wait bc it might already be dark before can is fully on the surface
       // also want to give the sensor some time to recover
+      delay(750);
       display.circle(1, 500);
       display.clear();
       delay(500);
@@ -281,15 +282,25 @@ boolean calibrate() {
     // really found calibration plate 1 - do a second scan for averaging and display OK
     sensorData sd_2;
     display.calibration1();
-    delay(1000);
+
+    // dark scan to remove potential external light
+    if (tSerial.checkCommands()) return false;
+    delay(750);
+    if (tSerial.checkCommands()) return false;
+    sensorData dsd_2;
+    colorSense.scan(NULL, false, &dsd_2, false);
+    delay(750);
+    if (tSerial.checkCommands()) return false;
+
     // make a second scan and calc an average
     int32_t tval2 = colorSense.scan(NULL, false, &sd_2);
-    float rb_low = (sd_1.value[RED_IDX] + sd_2.value[RED_IDX]) / 
-            (float)(sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX]);
 
-    WRITEDEBUG((sd_1.value[RED_IDX] + sd_2.value[RED_IDX]) / 2);
+    float rb_low = (sd_1.value[RED_IDX] + sd_2.value[RED_IDX] - 2*dsd_2.value[RED_IDX]) / 
+            (float)(sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX] - 2*dsd_2.value[BLUE_IDX]);
+
+    WRITEDEBUG((sd_1.value[RED_IDX] + sd_2.value[RED_IDX] - 2*dsd_2.value[RED_IDX]) / 2);
     WRITEDEBUG("/");
-    WRITEDEBUG((sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX]) / 2);
+    WRITEDEBUG((sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX] - 2*dsd_2.value[BLUE_IDX]) / 2);
     WRITEDEBUG("=");
     WRITEDEBUGF(rb_low, 5);
     WRITEDEBUG("; ");
@@ -301,17 +312,14 @@ boolean calibrate() {
     while (true) {
       display.calibration2();
 
-      // poll if there is an incoming serial command
-      if (tSerial.checkCommands()) return false;
-
       // wait till can is lifted and put down again
       while (colorSense.isDark()) {
-        delay(500);
+        delay(250);
         if (tSerial.checkCommands()) return false;
       }
       display.up();
       while (colorSense.isLight()) {
-        delay(500);
+        delay(250);
         if (tSerial.checkCommands()) return false;
       }
       display.calibration2();
@@ -330,22 +338,27 @@ boolean calibrate() {
   
           display.calibration2();
           if (tSerial.checkCommands()) return false;
-          delay(1000);
+          
+          // dark scan to remove potential external light
+          delay(750);
+          colorSense.scan(NULL, false, &dsd_2, false);
           if (tSerial.checkCommands()) return false;
-
+          delay(750);
+          if (tSerial.checkCommands()) return false;
+      
           // make a second scan and calc an average
           int32_t tval2 = colorSense.scan(NULL, false, &sd_2);
           display.calibration2();
-          float rb_high = (sd_1.value[RED_IDX] + sd_2.value[RED_IDX]) / 
-                   (float)(sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX]);
+          float rb_high = (sd_1.value[RED_IDX] + sd_2.value[RED_IDX] - 2*dsd_2.value[RED_IDX]) / 
+                   (float)(sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX] - 2*dsd_2.value[BLUE_IDX]);
 
           float cal[2];
           cal[0] = (HIGH_TARGET - LOW_TARGET) / (rb_high - rb_low);
           cal[1] = LOW_TARGET - cal[0]*rb_low;
 
-          WRITEDEBUG((sd_1.value[RED_IDX] + sd_2.value[RED_IDX]) / 2);
+          WRITEDEBUG((sd_1.value[RED_IDX] + sd_2.value[RED_IDX] - 2*dsd_2.value[RED_IDX]) / 2);
           WRITEDEBUG("/");
-          WRITEDEBUG((sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX]) / 2);
+          WRITEDEBUG((sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX] - 2*dsd_2.value[BLUE_IDX]) / 2);
           WRITEDEBUG("=");
           WRITEDEBUGF(rb_high, 5);
           
@@ -375,8 +388,8 @@ boolean calibrate() {
 
 // make a full scan and display on LCD
 inline void scanAndDisplay() {
-  // make a measurement with stored configuration
-  int32_t tval = colorSense.scan();
+  // make a measurement with stored configuration (last 'param' toggles external light removal)
+  int32_t tval = colorSense.scan(NULL, false, NULL, true, true);
 
   displayNum(tval);
 }
