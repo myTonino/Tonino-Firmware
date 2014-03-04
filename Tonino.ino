@@ -1,4 +1,4 @@
-// Tonino_1_0_6.ino
+// Tonino.ino
 //----------------
 // Arduino code for Tonino (my-tonino.com) using
 //    - DFRduino Nano
