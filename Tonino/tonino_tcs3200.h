@@ -87,10 +87,10 @@
 #define LOW_BLUE     1470 // brown disk blue reading
 #define HIGH_RED    11300 // red disk white reading
 #define HIGH_BLUE    3050 // red disk blue reading
-#define RED_RANGE_LOW    1200
-#define RED_RANGE_HIGH   4200
-#define BLUE_RANGE_LOW    750
-#define BLUE_RANGE_HIGH  1450
+#define RED_RANGE_LOW    1300
+#define RED_RANGE_HIGH   4300
+#define BLUE_RANGE_LOW    800
+#define BLUE_RANGE_HIGH  1550
 #define LOW_TARGET  1.5   // brown disk target r/b value
 #define HIGH_TARGET 3.7   // red disk target r/b value
 

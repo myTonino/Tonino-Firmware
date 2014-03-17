@@ -180,7 +180,7 @@ int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean
 		digitalWrite(_POWER, HIGH);
 		delay(50);
 		
-		WRITEDEBUG("  ext light: ");
+		WRITEDEBUGLN("ext light:");
 		uint32_t ds;
 		if (_colorMode & COLOR_WHITE) {
 			setFilter(WHITE_IDX); // white sensor
@@ -236,7 +236,7 @@ void TCS3200::sensorOff() {
 }
 
 // returns 1 if the first, darker, 2 if the second, lighter calibration plate is detected
-// 0 otherwise; a quick sampling with LEDs in conducted
+// 0 otherwise; a quick sampling with LEDs switched on is conducted
 uint8_t TCS3200::isCalibrating() {
   uint8_t samplingBackup = _readDiv;
   _readDiv = QUICK_SAMPLING;
@@ -247,6 +247,8 @@ uint8_t TCS3200::isCalibrating() {
 
   digitalWrite(_POWER, HIGH);
   digitalWrite(_LED, HIGH);
+  delay(50);
+
   setFilter(RED_IDX); // red sensor
   int32_t wval = readSingle();
   setFilter(BLUE_IDX); // blue sensor
@@ -258,10 +260,10 @@ uint8_t TCS3200::isCalibrating() {
   uint8_t cal = 0;
   if ((abs(wval-LOW_RED) < RED_RANGE_LOW) && (abs(bval-LOW_BLUE) < BLUE_RANGE_LOW)) {
     // found first calibration plate
-    cal = 1;
+    cal = LOW_PLATE;
   } else if ((abs(wval-HIGH_RED) < RED_RANGE_HIGH) && (abs(bval-HIGH_BLUE) < BLUE_RANGE_HIGH)) {
     // found second calibration plate
-    cal = 2;
+    cal = HIGH_PLATE;
   }
   // else found no calibration plate
   
@@ -313,15 +315,27 @@ uint32_t TCS3200::readSingle(void) {
 
 // set the sensor color filter
 void TCS3200::setFilter(uint8_t f) {
-  WRITEDEBUG("setFilter ");
+  //WRITEDEBUG("setFilter ");
   switch (f) {
-    case RED_IDX:   WRITEDEBUGLN("R"); digitalWrite(_S2, LOW);  digitalWrite(_S3, LOW);  break;
-    case GREEN_IDX:  WRITEDEBUGLN("G"); digitalWrite(_S2, HIGH); digitalWrite(_S3, HIGH); break;
-    case BLUE_IDX:  WRITEDEBUGLN("B"); digitalWrite(_S2, LOW);  digitalWrite(_S3, HIGH); break;
-    case WHITE_IDX:  WRITEDEBUGLN("X"); digitalWrite(_S2, HIGH); digitalWrite(_S3, LOW);  break;
+    case RED_IDX:   /*WRITEDEBUGLN("R");*/ 
+			digitalWrite(_S2, LOW);
+			digitalWrite(_S3, LOW);  
+			break;
+    case GREEN_IDX:  /*WRITEDEBUGLN("G");*/ 
+			digitalWrite(_S2, HIGH); 
+			digitalWrite(_S3, HIGH); 
+			break;
+    case BLUE_IDX:  /*WRITEDEBUGLN("B");*/ 
+			digitalWrite(_S2, LOW);  
+			digitalWrite(_S3, HIGH); 
+			break;
+    case WHITE_IDX:  /*WRITEDEBUGLN("X");*/ 
+			digitalWrite(_S2, HIGH); 
+			digitalWrite(_S3, LOW);  
+			break;
     default:  
-    WRITEDEBUG("ERROR: unknown filter: ");
-    WRITEDEBUGLN(f);
+			WRITEDEBUG("ERROR: unknown filter: ");
+			WRITEDEBUGLN(f);
   }
 }
 

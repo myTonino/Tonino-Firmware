@@ -1,5 +1,3 @@
-// Tonino.ino
-//----------------
 // Arduino code for Tonino (my-tonino.com) using
 //    - DFRduino Nano
 //    - Adafruit 0.56" 7-segment LCD backpack display
@@ -46,7 +44,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ------------------------------------------------------------------------------------------
 
-#define VERSION "1 0 7"
+#define VERSION "1 0 8"
 
 #include <tonino.h>
 #include <tonino_lcd.h>
@@ -147,7 +145,6 @@ void setup() {
   if (tConfig.getCheckCalInit() && colorSense.isCalibrating() == LOW_PLATE) {
     display.clear();
     if (calibrate()) {
-      delay(200);
       display.done();
     }
   } else {
@@ -206,6 +203,7 @@ void loop() {
       delay(750);
       display.circle(1, 500);
       display.clear();
+      wdt_reset();
       delay(500);
 
       scanAndDisplay();
@@ -272,41 +270,42 @@ boolean calibrate() {
   
   display.calibration1();
   WRITEDEBUG("Calibrating ... ");
-  delay(1000);
+  delay(1500);
   
-  // scan for calibration plate 1
-  int32_t tval1 = colorSense.scan(NULL, false, &sd_1);
+  // scan 1
+  colorSense.scan(NULL, false, &sd_1);
+  if (tSerial.checkCommands()) return false;
+  display.calibration1();
+  delay(750);
+  if (tSerial.checkCommands()) return false;
 
-  if ((abs(sd_1.value[RED_IDX]-LOW_RED) < RED_RANGE_LOW) && 
-      (abs(sd_1.value[BLUE_IDX]-LOW_BLUE) < BLUE_RANGE_LOW)) {
-    // really found calibration plate 1 - do a second scan for averaging and display OK
-    sensorData sd_2;
-    display.calibration1();
+  // dark scan to remove potential external light
+  sensorData sd_d;
+  colorSense.scan(NULL, false, &sd_d, false);
+  if (tSerial.checkCommands()) return false;
+  display.calibration1();
+  delay(750);
+  if (tSerial.checkCommands()) return false;
 
-    // dark scan to remove potential external light
-    if (tSerial.checkCommands()) return false;
-    delay(750);
-    if (tSerial.checkCommands()) return false;
-    sensorData dsd_2;
-    colorSense.scan(NULL, false, &dsd_2, false);
-    delay(750);
-    if (tSerial.checkCommands()) return false;
+  // scan 2
+  sensorData sd_2;
+  colorSense.scan(NULL, false, &sd_2);
+  display.calibration1();
+  delay(200);
 
-    // make a second scan and calc an average
-    int32_t tval2 = colorSense.scan(NULL, false, &sd_2);
+  float redavg = (sd_1.value[RED_IDX] + sd_2.value[RED_IDX]) / 2.0 - sd_d.value[RED_IDX];
+  float blueavg = (sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX]) / 2.0 - sd_d.value[BLUE_IDX];
+  
+  if ((abs(redavg - LOW_RED) < RED_RANGE_LOW) && (abs(blueavg - LOW_BLUE) < BLUE_RANGE_LOW)) {
 
-    float rb_low = (sd_1.value[RED_IDX] + sd_2.value[RED_IDX] - 2*dsd_2.value[RED_IDX]) / 
-            (float)(sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX] - 2*dsd_2.value[BLUE_IDX]);
+    float rb_low = redavg / blueavg;
 
-    WRITEDEBUG((sd_1.value[RED_IDX] + sd_2.value[RED_IDX] - 2*dsd_2.value[RED_IDX]) / 2);
+    WRITEDEBUG(redavg);
     WRITEDEBUG("/");
-    WRITEDEBUG((sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX] - 2*dsd_2.value[BLUE_IDX]) / 2);
+    WRITEDEBUG(blueavg);
     WRITEDEBUG("=");
     WRITEDEBUGF(rb_low, 5);
     WRITEDEBUG("; ");
-
-    // DON'T write measured average T-value to display as it is confusing for the user
-    // displayNum((int32_t)((tval1 + tval2) / 2.0 + 0.5));
 
     // wait for other plate
     while (true) {
@@ -319,70 +318,62 @@ boolean calibrate() {
       }
       display.up();
       while (colorSense.isLight()) {
-        delay(250);
+        delay(500);
         if (tSerial.checkCommands()) return false;
       }
       display.calibration2();
-      delay(500);
+      delay(250);
 
-      // scan for calibration plate 2
-      // this is done with a quick (only white) measurement
-      if (colorSense.isCalibrating() == HIGH_PLATE) {
-        delay(200);
-        // make a thorough scan
-        tval1 = colorSense.scan(NULL, false, &sd_1);
+      // scan 1 for calibration plate 2
+      colorSense.scan(NULL, false, &sd_1);
+      if (tSerial.checkCommands()) return false;
+      display.calibration2();
+      delay(750);
+      if (tSerial.checkCommands()) return false;
 
-        if ((abs(sd_1.value[RED_IDX]-HIGH_RED) < RED_RANGE_HIGH) && 
-            (abs(sd_1.value[BLUE_IDX]-HIGH_BLUE) < BLUE_RANGE_HIGH)) {
-          // really found calibration plate 2 - calc and save calibration
+      // dark scan to remove potential external light
+      colorSense.scan(NULL, false, &sd_d, false);
+      if (tSerial.checkCommands()) return false;
+      display.calibration2();
+      delay(750);
+      if (tSerial.checkCommands()) return false;
+
+      // scan 2
+      colorSense.scan(NULL, false, &sd_2);
+      display.calibration2();
+
+      redavg = (sd_1.value[RED_IDX] + sd_2.value[RED_IDX]) / 2.0 - sd_d.value[RED_IDX];
+      blueavg = (sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX]) / 2.0 - sd_d.value[BLUE_IDX];
   
-          display.calibration2();
-          if (tSerial.checkCommands()) return false;
-          
-          // dark scan to remove potential external light
-          delay(750);
-          colorSense.scan(NULL, false, &dsd_2, false);
-          if (tSerial.checkCommands()) return false;
-          delay(750);
-          if (tSerial.checkCommands()) return false;
+      float rb_high = redavg / blueavg;
+
+      float cal[2];
+      cal[0] = (HIGH_TARGET - LOW_TARGET) / (rb_high - rb_low);
+      cal[1] = LOW_TARGET - cal[0]*rb_low;
+
+      WRITEDEBUG((sd_1.value[RED_IDX] + sd_2.value[RED_IDX] - 2*sd_d.value[RED_IDX]) / 2);
+      WRITEDEBUG("/");
+      WRITEDEBUG((sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX] - 2*sd_d.value[BLUE_IDX]) / 2);
+      WRITEDEBUG("=");
+      WRITEDEBUGF(rb_high, 5);
       
-          // make a second scan and calc an average
-          int32_t tval2 = colorSense.scan(NULL, false, &sd_2);
-          display.calibration2();
-          float rb_high = (sd_1.value[RED_IDX] + sd_2.value[RED_IDX] - 2*dsd_2.value[RED_IDX]) / 
-                   (float)(sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX] - 2*dsd_2.value[BLUE_IDX]);
+      WRITEDEBUG(" => ");
+      WRITEDEBUGF(cal[0], 5);
+      WRITEDEBUG(", ");
+      WRITEDEBUGLNF(cal[1], 5);
 
-          float cal[2];
-          cal[0] = (HIGH_TARGET - LOW_TARGET) / (rb_high - rb_low);
-          cal[1] = LOW_TARGET - cal[0]*rb_low;
+      if (tSerial.checkCommands()) return false;
 
-          WRITEDEBUG((sd_1.value[RED_IDX] + sd_2.value[RED_IDX] - 2*dsd_2.value[RED_IDX]) / 2);
-          WRITEDEBUG("/");
-          WRITEDEBUG((sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX] - 2*dsd_2.value[BLUE_IDX]) / 2);
-          WRITEDEBUG("=");
-          WRITEDEBUGF(rb_high, 5);
-          
-          WRITEDEBUG(" => ");
-          WRITEDEBUGF(cal[0], 5);
-          WRITEDEBUG(", ");
-          WRITEDEBUGLNF(cal[1], 5);
-  
-          // DON'T write measured average T-value to display as it is confusing for the user
-          // displayNum((int32_t)((tval1 + tval2) / 2.0 + 0.5));
-          if (tSerial.checkCommands()) return false;
-
-          tConfig.setCalibration(cal);
-          delay(2500);
-          return true;
-        }
-      }
-      delay(500);
+      tConfig.setCalibration(cal);
+      delay(200);
+      return true;
     }
 
   } else {
     // could not detect first plate even though quick check thought so - error and continue
     display.error();
     delay(3000);
+    return false;
   }
 }
 
