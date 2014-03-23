@@ -16,6 +16,7 @@ Tonino Resources
 
 Version History
 ---------------
+- v1.0.8 Improved calibration stability
 - v1.0.7 Improved external light suppression
 - v1.0.6 Adds UP notification during calibration
 - v1.0.5 Internal update
