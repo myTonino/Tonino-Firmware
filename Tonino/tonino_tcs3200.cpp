@@ -132,15 +132,16 @@ int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean
     sd.value[i] = 0;
   }
   
+  // display off
+  if (_display != NULL) {
+    _display->clear();
+  }
   // switch on
   digitalWrite(_POWER, HIGH);
   if (ledon) {
     digitalWrite(_LED, HIGH);
   }
-  if (_display != NULL) {
-    _display->clear();
-  }
-  delay(50);
+  delay(SENSOR_ON_DELAY);
   
   if (_colorMode & COLOR_WHITE) {
     if (displayAnim && _display != NULL) {
@@ -155,7 +156,10 @@ int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean
       if (animPos == 2) animPos++;
     }
     setFilter(RED_IDX); // red sensor
+    uint8_t samplingBackup = _readDiv;
+    _readDiv = min(REDSAMPLING_FACTOR*samplingBackup, 100);
     sd.value[RED_IDX] = readSingle();
+    _readDiv = samplingBackup;
   }
   if (_colorMode & COLOR_BLUE) {
     if (displayAnim && _display != NULL) {
@@ -178,9 +182,9 @@ int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean
 	if (removeExtLight) {
 		delay(500);
 		digitalWrite(_POWER, HIGH);
-		delay(50);
+		delay(SENSOR_ON_DELAY);
 		
-		WRITEDEBUGLN("ext light:");
+		WRITEDEBUG("  ext light:");
 		uint32_t ds;
 		if (_colorMode & COLOR_WHITE) {
 			setFilter(WHITE_IDX); // white sensor
@@ -247,7 +251,7 @@ uint8_t TCS3200::isCalibrating() {
 
   digitalWrite(_POWER, HIGH);
   digitalWrite(_LED, HIGH);
-  delay(50);
+  delay(SENSOR_ON_DELAY);
 
   setFilter(RED_IDX); // red sensor
   int32_t wval = readSingle();
@@ -284,7 +288,7 @@ bool TCS3200::isLight() {
   digitalWrite(_LED, LOW);
   digitalWrite(_POWER, HIGH);
   setFilter(WHITE_IDX); // white sensor
-  delay(50);
+  delay(SENSOR_ON_DELAY);
   
   uint32_t val = readSingle();
   sensorOff();
@@ -305,7 +309,7 @@ bool TCS3200::isDark() {
 
 // blocking read of a single sensor value
 uint32_t TCS3200::readSingle(void) {
-  delay(100);
+  delay(SENSOR_SWITCH_DELAY);
   FreqCount.begin(1000/_readDiv);    // start
   while (!FreqCount.available());   // wait
   FreqCount.end();                  // stop
@@ -367,9 +371,9 @@ void TCS3200::getScaling(float *scale) {
   }
 }
 
-// store new sampling value
+// store new sampling value, [0..100]
 void TCS3200::setSampling(uint8_t sampling) {
-  _readDiv = (sampling > 0 ? sampling : _readDiv);
+  _readDiv = ((sampling > 0 && sampling <= 100) ? sampling : _readDiv);
 }
 
 // retrieve current sampling value

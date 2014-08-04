@@ -547,7 +547,7 @@ void LCD::approx(uint16_t num) {
 // displays a number; effect: like a snake leaving behind the num
 void LCD::snake(uint16_t num) {
   uint8_t dig[5];
-  int16_t dtime = 15;
+  int16_t dtime = 10;
   uint8_t curDig = 0;
 
   calcDigits(dig, num);

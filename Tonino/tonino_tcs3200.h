@@ -53,8 +53,11 @@
 // sampling rates; x means scan duration of 1/x per color
 #define FULL_SAMPLING 1
 #define SLOW_SAMPLING 2
-#define NORMAL_SAMPLING 5
-#define QUICK_SAMPLING 25
+#define NORMAL_SAMPLING 3
+#define QUICK_SAMPLING 100
+
+// RED color will be measured longer by this factor
+#define REDSAMPLING_FACTOR 2
 
 // flags for selecting which colors are measured
 #define COLOR_WHITE  0b00000001
@@ -74,6 +77,12 @@
 #define NR_SCALE_VALUES 4
 #define NR_CAL_VALUES 2
 #define MAX_CAL_VARS max(NR_SCALE_VALUES,NR_CAL_VALUES)
+
+// delay (ms) after turning sensor on
+#define SENSOR_ON_DELAY 1
+
+// delay (ms) after switching sensor channel (in readSingle)
+#define SENSOR_SWITCH_DELAY 0
 
 // threshold for detecting can lifting and replacing
 #define LIGHT_MIN 199
@@ -117,6 +126,7 @@ class TCS3200 {
     // if sd is not NULL it contains the actual raw color measurement values
     // with the T-value at T_IDX
     // if ledon is true, LEDs are switched on during measurement
+    // if removeExtLight is true, additional 'dark' measurement is done
     int32_t scan(float *raw = NULL, bool displayAnim = false, sensorData *sd = NULL, boolean ledon = true, boolean removeExtLight = false);
     
     // switch sensor completely off
@@ -138,13 +148,13 @@ class TCS3200 {
     void setCalibration(float *cal);
     // get the NR_CAL_VALUES values for calibration
     void getCalibration(float *cal);
-    // set sampling rate, e.g. NORMAL_SAMPLING
+    // set sampling rate, see xxx_SAMPLING constants, [0..100]
     void setSampling(uint8_t sampling);
-    // get sampling rate, e.g. NORMAL_SAMPLING
+    // get sampling rate
     uint8_t getSampling();
-    // set color mode, e.g. FULL_COLOR
+    // set color mode, see COLOR_xxx constants
     void setColorMode(uint8_t mode);
-    // get color mode, e.g. FULL_COLOR
+    // get color mode, see COLOR_xxx constants
     uint8_t getColorMode();
 
       
@@ -170,8 +180,8 @@ class TCS3200 {
     
     // synchronously (blocking) read a value
     uint32_t readSingle();
-    // set the photodiode filter
-    void   setFilter(uint8_t f);
+    // set the photodiode filter, must be one of xxx_IDX constants
+    void setFilter(uint8_t f);
     // convert raw sensor data (in sd) into T-value using calibration and scaling
     // return value is T-value
     // if raw is not NULL, it contains the calibrated single value

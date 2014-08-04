@@ -14,7 +14,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2013, Paul Holleis, Marko Luther
+// Copyright (c) 2014, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Author:  Paul Holleis, Marko Luther
@@ -44,7 +44,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ------------------------------------------------------------------------------------------
 
-#define VERSION "1 0 8"
+#define VERSION "1 0 9"
 
 #include <tonino.h>
 #include <tonino_lcd.h>
@@ -142,15 +142,18 @@ void setup() {
   pinMode (13, INPUT);
 
   // check whether we are calibrating (detect first calibration plate)
-  if (tConfig.getCheckCalInit() && colorSense.isCalibrating() == LOW_PLATE) {
-    display.clear();
-    if (calibrate()) {
-      display.done();
+  if (colorSense.isDark()) {
+    if (tConfig.getCheckCalInit() && colorSense.isCalibrating() == LOW_PLATE) {
+      display.clear();
+      if (calibrate()) {
+        display.done();
+      }
+    } else {
+      // no calibration plate detected, directly make first scan
+      scanAndDisplay();
     }
   } else {
-    // no calibration plate detected, directly scan
-    scanAndDisplay();
-    delay(1000);
+    display.clear();
   }
 }
 
@@ -175,11 +178,11 @@ void loop() {
   uint32_t lastTimestamp = 0;
   
   while(true) {
-    // check this setting as it could be changed during runtime
+    // check this setting within the while loop as it could be changed during runtime
     uint16_t delayTillUpTest = tConfig.getDelayTillUpTest() * 100;
-  
+    
     // poll if there is an incoming serial command
-    if (tSerial.checkCommands()) lastTimestamp = millis();
+    if (checkCommands()) lastTimestamp = millis();
     
     // check whether user lifted the can
     if (colorSense.isLight()) {
@@ -192,24 +195,24 @@ void loop() {
       // wait until user puts the can down again
       while (!colorSense.isDark()) {
         // interval for checking - need not be small
-        delay(1000);
+        delay(delayTillUpTest);
         // poll if there is an incoming serial command
-        if (tSerial.checkCommands()) lastTimestamp = millis();
+        if (checkCommands()) lastTimestamp = millis();
 
         lastTimestamp = checkLowPowerMode(true, lastTimestamp);
       }
-      // wait bc it might already be dark before can is fully on the surface
-      // also want to give the sensor some time to recover
-      delay(750);
-      display.circle(1, 500);
+      // short wait because it might already be dark before 
+			// the can is fully placed on the surface
+      delay(500);
+      display.circle(1, 300);
       display.clear();
       wdt_reset();
-      delay(500);
+      delay(100);
 
       scanAndDisplay();
 
       lastTimestamp = millis();
-      // this call is mainly to reset dipslay brightness etc. to normal
+      // this call is mainly to potentially reset display brightness back to normal
       lastTimestamp = checkLowPowerMode(false, lastTimestamp);
     }
     delay(delayTillUpTest);
@@ -247,8 +250,8 @@ inline uint32_t checkLowPowerMode(bool isLight, uint32_t lastTimestamp) {
 
   } else if (millis() - lastTimestamp > TIME_TILL_DIM) {
     if (!lowBrightness) {
-      // temporarily set lower brightness
-      display.setBrightness(display.getBrightness() / 2);
+      // temporarily set low brightness
+      display.setBrightness(1);
       lowBrightness = true;
     }
     return lastTimestamp;
@@ -263,38 +266,23 @@ inline uint32_t checkLowPowerMode(bool isLight, uint32_t lastTimestamp) {
   }
 }
 
-
 // called when detected first calibration plate with quick scan
 boolean calibrate() {
-  sensorData sd_1;
+  sensorData sd;
   
   display.calibration1();
   WRITEDEBUG("Calibrating ... ");
-  delay(1500);
+  delay(500);
   
-  // scan 1
-  colorSense.scan(NULL, false, &sd_1);
-  if (tSerial.checkCommands()) return false;
+  // scan plate 1
+  colorSense.scan(NULL, false, &sd);
+  if (checkCommands()) return false;
   display.calibration1();
-  delay(750);
-  if (tSerial.checkCommands()) return false;
+  delay(500);
+  if (checkCommands()) return false;
 
-  // dark scan to remove potential external light
-  sensorData sd_d;
-  colorSense.scan(NULL, false, &sd_d, false);
-  if (tSerial.checkCommands()) return false;
-  display.calibration1();
-  delay(750);
-  if (tSerial.checkCommands()) return false;
-
-  // scan 2
-  sensorData sd_2;
-  colorSense.scan(NULL, false, &sd_2);
-  display.calibration1();
-  delay(200);
-
-  float redavg = (sd_1.value[RED_IDX] + sd_2.value[RED_IDX]) / 2.0 - sd_d.value[RED_IDX];
-  float blueavg = (sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX]) / 2.0 - sd_d.value[BLUE_IDX];
+  float redavg = sd.value[RED_IDX];
+  float blueavg = sd.value[BLUE_IDX];
   
   if ((abs(redavg - LOW_RED) < RED_RANGE_LOW) && (abs(blueavg - LOW_BLUE) < BLUE_RANGE_LOW)) {
 
@@ -308,43 +296,32 @@ boolean calibrate() {
     WRITEDEBUG("; ");
 
     // wait for other plate
+    uint16_t delayTillUpTest = tConfig.getDelayTillUpTest() * 100;
     while (true) {
       display.calibration2();
 
       // wait till can is lifted and put down again
       while (colorSense.isDark()) {
-        delay(250);
-        if (tSerial.checkCommands()) return false;
+        delay(delayTillUpTest);
+        if (checkCommands()) return false;
       }
       display.up();
       while (colorSense.isLight()) {
-        delay(500);
-        if (tSerial.checkCommands()) return false;
+        delay(delayTillUpTest);
+        if (checkCommands()) return false;
       }
       display.calibration2();
-      delay(250);
+      delay(500);
 
-      // scan 1 for calibration plate 2
-      colorSense.scan(NULL, false, &sd_1);
-      if (tSerial.checkCommands()) return false;
+      // scan plate 2
+      colorSense.scan(NULL, false, &sd);
+      if (checkCommands()) return false;
       display.calibration2();
-      delay(750);
-      if (tSerial.checkCommands()) return false;
+      delay(500);
+      if (checkCommands()) return false;
 
-      // dark scan to remove potential external light
-      colorSense.scan(NULL, false, &sd_d, false);
-      if (tSerial.checkCommands()) return false;
-      display.calibration2();
-      delay(750);
-      if (tSerial.checkCommands()) return false;
-
-      // scan 2
-      colorSense.scan(NULL, false, &sd_2);
-      display.calibration2();
-
-      redavg = (sd_1.value[RED_IDX] + sd_2.value[RED_IDX]) / 2.0 - sd_d.value[RED_IDX];
-      blueavg = (sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX]) / 2.0 - sd_d.value[BLUE_IDX];
-  
+      redavg = sd.value[RED_IDX];
+      blueavg = sd.value[BLUE_IDX];
       float rb_high = redavg / blueavg;
 
       float cal[2];
@@ -362,10 +339,10 @@ boolean calibrate() {
       WRITEDEBUG(", ");
       WRITEDEBUGLNF(cal[1], 5);
 
-      if (tSerial.checkCommands()) return false;
+      if (checkCommands()) return false;
 
       tConfig.setCalibration(cal);
-      delay(200);
+      delay(10);
       return true;
     }
 
@@ -379,12 +356,18 @@ boolean calibrate() {
 
 // make a full scan and display on LCD
 inline void scanAndDisplay() {
-  // make a measurement with stored configuration (last 'param' toggles external light removal)
-  int32_t tval = colorSense.scan(NULL, false, NULL, true, true);
+  // make a measurement with stored configuration, parameters:
+	// 1: NULL: not interested in raw values
+	// 2: false: no display animation during scan
+	// 3: NULL: not interested in raw values
+	// 4: true: switch on LEDs
+  // 5: false: no explicit external light removal
+  int32_t tval = colorSense.scan(NULL, false, NULL, true, false);
 
   displayNum(tval);
 }
 
+// show the given number on the display if possible
 inline void displayNum(int32_t tval) {
   if (tval < 0) {
     if (tval < -999) {
