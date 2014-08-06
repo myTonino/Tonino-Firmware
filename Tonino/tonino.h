@@ -56,7 +56,7 @@
 #define TIME_TILL_POWERDOWN 7200000 //  2 hours =  7200000
 
 // default values for parameters
-#define DEFAULT_SAMPLING NORMAL_SAMPLING
+#define DEFAULT_SAMPLING SLOW_SAMPLING
 #define DEFAULT_COLORS (COLOR_RED|COLOR_BLUE)
 #define DEFAULT_DELAYTILLUPTEST 10 // in 100ms, i.e. 10 means 1 second
 #define DEFAULT_BRIGHTNESS 10
