@@ -60,6 +60,12 @@ void ToninoConfig::init() {
   }
 }
 
+// returns true if the value is not a valid float
+bool ToninoConfig::isInvalidNumber(float f) {
+  return isnan(f) || isinf(f) || f > 4294967040.0 || 
+         f <-4294967040.0 || f == 0x7fffffff || f == (-0x7fffffff -1L);
+}
+
 // store calibration data to sensor library and EEPROM
 void ToninoConfig::setCalibration(float *cal) {
   _colorSense->setCalibration(cal);
@@ -68,9 +74,9 @@ void ToninoConfig::setCalibration(float *cal) {
   int addr = EEPROM_CAL_ADDRESS;
   for (int c = 0; c < NR_CAL_VALUES; ++c) {
     data.f = cal[c];
-    WRITEDEBUG("Storing Calib.");
+    WRITEDEBUG("Calib. ");
     WRITEDEBUGF(data.f, 6);
-    WRITEDEBUG(" as ");
+    WRITEDEBUGLN(" as");
     for (int b = 0; b < 4; ++b) {
       WRITEDEBUG(data.b[b]);
       WRITEDEBUG(SEPARATOR);
@@ -88,9 +94,9 @@ void ToninoConfig::setScaling(float *cal) {
   int addr = EEPROM_SCALE_ADDRESS;
   for (int c = 0; c < NR_SCALE_VALUES; ++c) {
     data.f = cal[c];
-    WRITEDEBUG("Storing Scaling ");
+    WRITEDEBUG("Scaling ");
     WRITEDEBUGF(data.f, 6);
-    WRITEDEBUG(" as ");
+    WRITEDEBUGLN(" as");
     for (int b = 0; b < 4; ++b) {
       WRITEDEBUG(data.b[b]);
       WRITEDEBUG(SEPARATOR);
@@ -108,13 +114,18 @@ void ToninoConfig::setSampling(uint8_t sampling) {
 
 // sets and stores the display brightness to EEPROM (0-15, 15=max brightness)
 void ToninoConfig::setBrightness(uint8_t b) {
-  _display->setBrightness(b);
-  checkedEepromWrite(EEPROM_BRIGHTNESS_ADDRESS, b);
+  if (_display != NULL) {
+		_display->setBrightness(b);
+		checkedEepromWrite(EEPROM_BRIGHTNESS_ADDRESS, b);
+	}
 }
 
 // gets the display brightness from EEPROM (0-15, 15=max brightness)
 uint8_t ToninoConfig::getBrightness() {
-  return EEPROM.read(EEPROM_BRIGHTNESS_ADDRESS);
+  if (_display != NULL) {
+		return _display->getBrightness();
+	}
+	return 0;
 }
 
 // store color mode setting to sensor library and EEPROM
@@ -149,11 +160,16 @@ uint8_t ToninoConfig::getDelayTillUpTest() {
 // stores default config values in EEPROM and sets local vars and sensor library values accordingly
 // should only be used if isEepromChanged() returned false
 void ToninoConfig::writeDefaults() {
-  WRITEDEBUGLN("Storing default values to EEPROM");
+  WRITEDEBUGLN("Store def");
+  WRITEDEBUG("Sampling: ");
   setSampling(DEFAULT_SAMPLING);
+  WRITEDEBUG("Bright: ");
   setBrightness(DEFAULT_BRIGHTNESS);
+  WRITEDEBUG("Col mode: ");
   setColorMode(DEFAULT_COLORS);
+  WRITEDEBUG("Do_init_cal: ");
   setCheckCalInit(DEFAULT_DOCALINIT);
+  WRITEDEBUG("Delay_till_up: ");
   setDelayTillUpTest(DEFAULT_DELAYTILLUPTEST);
 
   float cal[MAX_CAL_VARS];
@@ -187,79 +203,178 @@ void ToninoConfig::writeDefaults() {
 // writes val to EEPROM address addr but only if the stored value is different
 bool ToninoConfig::checkedEepromWrite(uint8_t addr, uint8_t val) {
   // save that EEPROM has been changed
-  if (!isEepromChanged()) {
-    EEPROM.write(EEPROM_CHANGED_ADDRESS, EEPROM_SET);
+  for (uint8_t cyc = 0; cyc < EEPROM_REDUNDANT_CYCLES+1; cyc++) {
+    uint8_t raddr = EEPROM_CHANGED_ADDRESS + cyc*EEPROM_SIZE;
+    if (EEPROM.read(raddr) != EEPROM_SET) {
+      WRITEDEBUG("upd addr ");
+      WRITEDEBUG(raddr);
+      WRITEDEBUG(" from ");
+      WRITEDEBUG(EEPROM.read(raddr));
+      WRITEDEBUG(" to ");
+      WRITEDEBUG(EEPROM_SET);
+      EEPROM.write(raddr, EEPROM_SET);
+      WRITEDEBUG("=>");
+      WRITEDEBUGLN(EEPROM.read(raddr));
+    }
   }
-  if (EEPROM.read(addr) != val) {
-    EEPROM.write(addr, val);
-    return true;
+  WRITEDEBUGLN();
+
+  bool changed = false;
+  for (uint8_t cyc = 0; cyc < EEPROM_REDUNDANT_CYCLES+1; cyc++) {
+    uint8_t raddr = addr + (cyc*EEPROM_SIZE);
+    WRITEDEBUG("read addr ");
+    WRITEDEBUG(raddr);
+    WRITEDEBUG(":");
+    WRITEDEBUGLN(EEPROM.read(raddr));
+    if (EEPROM.read(raddr) != val) {
+      WRITEDEBUG("upd addr ");
+      WRITEDEBUG(raddr);
+      WRITEDEBUG(" from ");
+      WRITEDEBUG(EEPROM.read(raddr));
+      WRITEDEBUG(" to ");
+      WRITEDEBUG(val);
+      EEPROM.write(raddr, val);
+      WRITEDEBUG("=>");
+      WRITEDEBUGLN(EEPROM.read(raddr));
+      changed = true;
+    } else {
+      WRITEDEBUG("no update ");
+      WRITEDEBUGLN(EEPROM.read(raddr));
+    }
   }
-  return false;
+  return changed;
+}
+
+// finds most frequent value in given array
+// return true if at least one value is different
+// TODO more efficient for special values of EEPROM_REDUNDANT_CYCLES
+bool ToninoConfig::getMostFrequent(uint8_t *vals, uint8_t *val) {
+  uint8_t count = 0;
+  uint8_t curCount;
+  uint8_t idx = 0;
+  for (uint8_t i = 0; i < EEPROM_REDUNDANT_CYCLES+1; i++) {
+    if (i > 0 && vals[i] == vals[idx]) {
+      // ignore if already counted (only catches most freq up to that point)
+      continue;
+    }
+    curCount = 0;
+    for (int j = 0; j < EEPROM_REDUNDANT_CYCLES+1; j++) {
+      if (vals[i] == vals[j]) {
+        curCount++;
+      }
+    }
+    WRITEDEBUG("found ");
+    WRITEDEBUG(vals[i]);
+    WRITEDEBUG(SEPARATOR);
+    WRITEDEBUG(curCount);
+    WRITEDEBUGLN("times");
+    if (curCount > count) {
+      idx = i;
+      count = curCount;
+    }
+  }
+  *val = vals[idx];
+  // return true if not all numbers were the same
+  return count != EEPROM_REDUNDANT_CYCLES+1;
+}
+
+// reads value at given address
+uint8_t ToninoConfig::checkedEepromRead(uint8_t addr) {
+  uint8_t vals[EEPROM_REDUNDANT_CYCLES+1];
+  WRITEDEBUG("read");
+  for (uint8_t cyc = 0; cyc < EEPROM_REDUNDANT_CYCLES+1; cyc++) {
+    uint8_t raddr = addr + cyc*EEPROM_SIZE;
+    WRITEDEBUG(" addr ");
+    WRITEDEBUG(raddr);
+    WRITEDEBUG(":");
+    vals[cyc] = EEPROM.read(raddr);
+    WRITEDEBUG(vals[cyc]);
+  }
+  WRITEDEBUGLN();
+  
+  // need to find most probably correct (=most frequent) value
+  uint8_t val = 0;
+  if (getMostFrequent(vals, &val)) {
+    // need to update bc at least one value was different
+    WRITEDEBUG("using ");
+    WRITEDEBUG(val);
+    WRITEDEBUGLN("->correcting");
+    checkedEepromWrite(addr, val);
+  } else {
+    WRITEDEBUG("using ");
+    WRITEDEBUG(val);
+    WRITEDEBUGLN("->ok");
+  }
+  return val;
 }
 
 // true if EEPROM has already been (most probably) used to store config
 // (checks whether byte at EEPROM_CHANGED_ADDRESS is set to EEPROM_SET)
 inline bool ToninoConfig::isEepromChanged() {
-  return (EEPROM.read(EEPROM_CHANGED_ADDRESS) == EEPROM_SET);
+  return (checkedEepromRead(EEPROM_CHANGED_ADDRESS) == EEPROM_SET);
 }
 
 // read all config data from EEPROM to colorSense and local variables;
 // should only be used if isEepromChanged() returned true
 // if some settings have not been set, uses and stores default values
 void ToninoConfig::readStoredParameters() {
-  WRITEDEBUGLN("Reading stored params from EEPROM");
+  WRITEDEBUGLN("Read EEPROM");
   // sampling rate
-  uint8_t value = EEPROM.read(EEPROM_SAMPLING_ADDRESS);
-  if (value == 255) {
+  WRITEDEBUG("Sampling:");
+  uint8_t value = checkedEepromRead(EEPROM_SAMPLING_ADDRESS);
+  if (value > 100) {
     setSampling(DEFAULT_SAMPLING);
   } else {
-    _colorSense->setSampling(value);
+    setSampling(value);
   }
-  WRITEDEBUG("Sampling: ");
   WRITEDEBUG(_colorSense->getSampling());
-  WRITEDEBUG(SEPARATOR);
+  WRITEDEBUGLN();
 
   // display brightness
-  value = EEPROM.read(EEPROM_BRIGHTNESS_ADDRESS);
-  if (value > 15) {
-    setBrightness(DEFAULT_BRIGHTNESS);
-  } else {
-    _display->setBrightness(value);
-  }
-  WRITEDEBUG("Brightness: ");
-  WRITEDEBUG(_display->getBrightness());
-  WRITEDEBUG(SEPARATOR);
+  WRITEDEBUG("Bright:");
+  if (_display != NULL) {
+		value = checkedEepromRead(EEPROM_BRIGHTNESS_ADDRESS);
+		if (value > 15) {
+			setBrightness(DEFAULT_BRIGHTNESS);
+		} else {
+			setBrightness(value);
+		}
+		WRITEDEBUG(getBrightness());
+	} else {
+		WRITEDEBUG(" ignored");
+	}
+  WRITEDEBUGLN();
 
   // color mode
-  value = EEPROM.read(EEPROM_CMODE_ADDRESS);
-  if (value == 255) {
+  WRITEDEBUG("Col mode:");
+  value = checkedEepromRead(EEPROM_CMODE_ADDRESS);
+  if (value == 0 || value > COLOR_FULL) {
     setColorMode(DEFAULT_COLORS);
   } else {
-    _colorSense->setColorMode(value);
+    setColorMode(value);
   }
-  WRITEDEBUG("Color mode: ");
   WRITEDEBUG(_colorSense->getColorMode());
-  WRITEDEBUG(SEPARATOR);
+  WRITEDEBUGLN();
 
   // setting for initial calibration
-  value = EEPROM.read(EEPROM_CCI_ADDRESS);
+  WRITEDEBUG("Do_init_cal:");
+  value = checkedEepromRead(EEPROM_CCI_ADDRESS);
   if (value == 255) {
-    setCheckCalInit(DEFAULT_DOCALINIT ? 1 : 0);
+    setCheckCalInit(DEFAULT_DOCALINIT ? true : false);
   } else {
-    _doInitCal = (value == 0 ? false : true);
+    setCheckCalInit(value == 0 ? false : true);
   }
-  WRITEDEBUG("Do_init_cal: ");
   WRITEDEBUG(_doInitCal ? 1 : 0);
-  WRITEDEBUG(SEPARATOR);
+  WRITEDEBUGLN();
 
   // setting for delay till "can up" test
-  value = EEPROM.read(EEPROM_DELAYTILLUPTEST_ADDRESS);
+  WRITEDEBUG("Delay_till_up:");
+  value = checkedEepromRead(EEPROM_DELAYTILLUPTEST_ADDRESS);
   if (value == 255) {
     setDelayTillUpTest(DEFAULT_DELAYTILLUPTEST);
   } else {
-    _delayTillUpTest = value;
+    setDelayTillUpTest(value);
   }
-  WRITEDEBUG("Delay_till_up_test: ");
   WRITEDEBUG(_delayTillUpTest);
   WRITEDEBUGLN("*100ms");
 
@@ -269,17 +384,22 @@ void ToninoConfig::readStoredParameters() {
 
   uint8_t addr = EEPROM_CAL_ADDRESS;
   bool unknown = true;
-  WRITEDEBUGLN("Calib.: ");
+  WRITEDEBUGLN("Calib.:");
   for (int c = 0; c < NR_CAL_VALUES; ++c) {
-    for (int b = 0; b < 4; ++b) {
-      data.b[b] = EEPROM.read(addr++);
+    for (int b = 0; b < sizeof(data.f); ++b) {
+      data.b[b] = checkedEepromRead(addr++);
       if (data.b[b] != 255) {
         unknown = false;
       }
-      // WRITEDEBUG(data.b[b]);
-      // WRITEDEBUG(SEPARATOR);
+      WRITEDEBUG(data.b[b]);
+      WRITEDEBUG(SEPARATOR);
     }
-    // WRITEDEBUGLNF(data.f, 6);
+    WRITEDEBUGLNF(data.f, 6);
+    if (isInvalidNumber(data.f)) {
+      unknown = true;
+      WRITEDEBUGLN("err->default");
+      break;
+    }
     cal[c] = data.f;
   }
   if (unknown) {
@@ -297,17 +417,22 @@ void ToninoConfig::readStoredParameters() {
 
   addr = EEPROM_SCALE_ADDRESS;
   unknown = true;
-  WRITEDEBUGLN("Scale: ");
+  WRITEDEBUGLN("Scale:");
   for (int c = 0; c < NR_SCALE_VALUES; ++c) {
     for (int b = 0; b < sizeof(data.f); ++b) {
-      data.b[b] = EEPROM.read(addr++);
+      data.b[b] = checkedEepromRead(addr++);
       if (data.b[b] != 255) {
         unknown = false;
       }
-      // WRITEDEBUG(data.b[b]);
-      // WRITEDEBUG(SEPARATOR);
+      WRITEDEBUG(data.b[b]);
+      WRITEDEBUG(SEPARATOR);
     }
-    // WRITEDEBUGLNF(data.f, 6);
+    WRITEDEBUGLNF(data.f, 6);
+    if (isInvalidNumber(data.f)) {
+      unknown = true;
+      WRITEDEBUGLN("err->default");
+      break;
+    }
     cal[c] = data.f;
   }
   if (unknown) {

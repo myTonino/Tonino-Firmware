@@ -101,20 +101,18 @@ int32_t TCS3200::fitValue(sensorData *sd, float* raw, uint8_t colorMode) {
 
   // check for devide by 0
   if (sd->value[BLUE_IDX] == 0) {
-    WRITEDEBUGLN("ERROR: division by 0 (blue color)");
+    WRITEDEBUGLN("ERR:div/0(blue)");
     return -1;
   }
   // calibrate
   float r = (float)sd->value[RED_IDX];
   float b = (float)sd->value[BLUE_IDX];
   float v = (r / b) * _cal[0] + _cal[1];
-  WRITEDEBUG("(");
   WRITEDEBUG(v);
-  WRITEDEBUG(")");
   WRITEDEBUG(SEPARATOR);
   // scale
   int32_t tval = (int32_t)(_scale[0] * v*v*v + _scale[1] * v*v + _scale[2] * v + _scale[3] + 0.5);
-  WRITEDEBUG("= ");
+  WRITEDEBUG("=");
   WRITEDEBUGLN(tval);
   if (raw != NULL) {
     *raw = v;
@@ -184,7 +182,7 @@ int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean
 		digitalWrite(_POWER, HIGH);
 		delay(SENSOR_ON_DELAY);
 		
-		WRITEDEBUG("  ext light:");
+		WRITEDEBUG("ext light:");
 		uint32_t ds;
 		if (_colorMode & COLOR_WHITE) {
 			setFilter(WHITE_IDX); // white sensor
@@ -271,11 +269,11 @@ uint8_t TCS3200::isCalibrating() {
   }
   // else found no calibration plate
   
-  WRITEDEBUG("isCalib: ");
+  WRITEDEBUG("isCalib:");
   WRITEDEBUG(wval);
   WRITEDEBUG(",");
   WRITEDEBUG(bval);
-  WRITEDEBUG(" => ");
+  WRITEDEBUG("=>");
   WRITEDEBUGLN(cal);
   return cal;
 }
@@ -294,10 +292,10 @@ bool TCS3200::isLight() {
   sensorOff();
   _readDiv = samplingBackup;
 
-  WRITEDEBUG("isLight: ");
+  WRITEDEBUG("isLight:");
   WRITEDEBUG(val);
   WRITEDEBUG(" ");
-  WRITEDEBUGLN((val > LIGHT_MIN) ? "true" : "false");
+  WRITEDEBUGLN((val > LIGHT_MIN) ? "T" : "F");
   // brighter than threshold?
   return val > LIGHT_MIN;
 }
@@ -338,7 +336,7 @@ void TCS3200::setFilter(uint8_t f) {
 			digitalWrite(_S3, LOW);  
 			break;
     default:  
-			WRITEDEBUG("ERROR: unknown filter: ");
+			WRITEDEBUG("ERR:unk ");
 			WRITEDEBUGLN(f);
   }
 }
@@ -384,7 +382,7 @@ uint8_t TCS3200::getSampling() {
 // store new color mode
 void TCS3200::setColorMode(uint8_t colorMode) {
   if (colorMode == 0 || colorMode > COLOR_FULL) {
-    WRITEDEBUG("ERROR: unknown color mode: ");
+    WRITEDEBUG("ERR:unk ");
     WRITEDEBUGLN(colorMode);
     return;
   }

@@ -134,6 +134,9 @@ class ToninoSerial {
     // object for lib that calls methods according to serial input
     static SerialCommand _sCmd;
 
+    // returns true if the value is not a valid float
+    static boolean isInvalidNumber(float f);
+
     // object for communication with the color sensor
     static TCS3200 *_colorSense;
     // object for communication with the display

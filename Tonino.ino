@@ -44,7 +44,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ------------------------------------------------------------------------------------------
 
-#define VERSION "1 0 9"
+#define VERSION "1 1 2"
 
 #include <tonino.h>
 #include <tonino_lcd.h>
@@ -86,8 +86,8 @@ ToninoConfig tConfig = ToninoConfig(&colorSense, &display);
 // object for serial communication
 ToninoSerial tSerial = ToninoSerial(&colorSense, &display, &tConfig, VERSION);
 
-// flag whether display brightness has been reduced in power save mode
-bool lowBrightness = false;
+// stores original display brightness if it has been reduced in power save mode
+int8_t origBrightness = -1;
 
 
 void setup() {
@@ -202,7 +202,7 @@ void loop() {
         lastTimestamp = checkLowPowerMode(true, lastTimestamp);
       }
       // short wait because it might already be dark before 
-			// the can is fully placed on the surface
+      // the can is fully placed on the surface
       delay(500);
       display.circle(1, 300);
       display.clear();
@@ -249,21 +249,19 @@ inline uint32_t checkLowPowerMode(bool isLight, uint32_t lastTimestamp) {
     return millis();
 
   } else if (millis() - lastTimestamp > TIME_TILL_DIM) {
-    if (!lowBrightness) {
+    if (origBrightness < 0) {
       // temporarily set low brightness
+      origBrightness = tConfig.getBrightness();
       display.setBrightness(1);
-      lowBrightness = true;
     }
     return lastTimestamp;
     
-  } else {
-    if (lowBrightness) {
-      // restore original brightness
-      display.setBrightness(tConfig.getBrightness());
-      lowBrightness = false;
-    }
-    return lastTimestamp;
+  } else if (origBrightness >= 0) {
+    // restore original brightness
+    display.setBrightness(origBrightness);
+    origBrightness = -1;
   }
+  return lastTimestamp;
 }
 
 // called when detected first calibration plate with quick scan
@@ -271,7 +269,7 @@ boolean calibrate() {
   sensorData sd;
   
   display.calibration1();
-  WRITEDEBUG("Calibrating ... ");
+  WRITEDEBUGLN("Cal.");
   delay(500);
   
   // scan plate 1
@@ -328,15 +326,15 @@ boolean calibrate() {
       cal[0] = (HIGH_TARGET - LOW_TARGET) / (rb_high - rb_low);
       cal[1] = LOW_TARGET - cal[0]*rb_low;
 
-      WRITEDEBUG((sd_1.value[RED_IDX] + sd_2.value[RED_IDX] - 2*sd_d.value[RED_IDX]) / 2);
+      WRITEDEBUG(redavg);
       WRITEDEBUG("/");
-      WRITEDEBUG((sd_1.value[BLUE_IDX] + sd_2.value[BLUE_IDX] - 2*sd_d.value[BLUE_IDX]) / 2);
+      WRITEDEBUG(blueavg);
       WRITEDEBUG("=");
       WRITEDEBUGF(rb_high, 5);
       
-      WRITEDEBUG(" => ");
+      WRITEDEBUG("=>");
       WRITEDEBUGF(cal[0], 5);
-      WRITEDEBUG(", ");
+      WRITEDEBUG(",");
       WRITEDEBUGLNF(cal[1], 5);
 
       if (checkCommands()) return false;
@@ -357,10 +355,10 @@ boolean calibrate() {
 // make a full scan and display on LCD
 inline void scanAndDisplay() {
   // make a measurement with stored configuration, parameters:
-	// 1: NULL: not interested in raw values
-	// 2: false: no display animation during scan
-	// 3: NULL: not interested in raw values
-	// 4: true: switch on LEDs
+  // 1: NULL: not interested in raw values
+  // 2: false: no display animation during scan
+  // 3: NULL: not interested in raw values
+  // 4: true: switch on LEDs
   // 5: false: no explicit external light removal
   int32_t tval = colorSense.scan(NULL, false, NULL, true, false);
 

@@ -36,6 +36,10 @@
 // ------------------------------------------------------------------------------------------
 
 #define DODEBUG false
+// values will be stored in EEPROM value+1 timez; set to 0 for no redundancy
+// pay attention that EEPROM_START_ADDRESS + (EEPROM_REDUNDANT_CYCLES+1)*EEPROM_SIZE
+// is still within EEPROM limits
+#define EEPROM_REDUNDANT_CYCLES 2
 
 // separator between multiple values in one line
 #define SEPARATOR " "

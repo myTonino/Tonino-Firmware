@@ -37,6 +37,7 @@
 
 #include <tonino_serial.h>
 
+
 SerialCommand ToninoSerial::_sCmd;
 TCS3200 *ToninoSerial::_colorSense;
 LCD *ToninoSerial::_display;
@@ -55,6 +56,11 @@ ToninoSerial::~ToninoSerial(void) {
   // empty
 }
 
+// returns true if the value is not a valid float
+boolean ToninoSerial::isInvalidNumber(float f) {
+  return isnan(f) || isinf(f) || f > 4294967040.0 || f <-4294967040.0 || f == 0x7fffffff || f == (-0x7fffffff -1L);
+}
+
 // poll if there is an incoming serial command
 boolean ToninoSerial::checkCommands() {
    return _sCmd.readSerial();
@@ -71,8 +77,8 @@ void ToninoSerial::init(uint32_t speed) {
 //  WRITEDEBUGLN("  I_SCAN : scan and return w/b");
 //  WRITEDEBUGLN("  II_SCAN : scan and return raw values");
 //  WRITEDEBUGLN("  D_SCAN : scan without LEDs and return raw values");
-//  WRITEDEBUGLN("  SETCAL : store (white) calibration values");
-//  WRITEDEBUGLN("  GETCAL : retrieve current (white) calibration values");
+//  WRITEDEBUGLN("  SETCAL : store calibration values");
+//  WRITEDEBUGLN("  GETCAL : retrieve current calibration values");
 //  WRITEDEBUGLN("  SETSCALING : store scaling values");
 //  WRITEDEBUGLN("  GETSCALING : retrieve scaling values");
 //  WRITEDEBUGLN("  SETBRIGHTNESS : set brightness (0-15)");
@@ -81,8 +87,8 @@ void ToninoSerial::init(uint32_t speed) {
 //  WRITEDEBUGLN("  GETSAMPLING : get sampling");
 //  WRITEDEBUGLN("  SETCMODE: set color measure mode");
 //  WRITEDEBUGLN("  GETCMODE : get color measure mode");
-//  WRITEDEBUGLN("  SETCALINIT: use (1) or not (0) check for white calib at start");
-//  WRITEDEBUGLN("  GETCALINIT: is (1) or is not (0) checked for white calib at start");
+//  WRITEDEBUGLN("  SETCALINIT: use (1) or not (0) check for calib at start");
+//  WRITEDEBUGLN("  GETCALINIT: is (1) or is not (0) checked for calib at start");
 //  WRITEDEBUGLN("  SETLTDELAY: set delay between can-up measurements, in 1/10sec");
 //  WRITEDEBUGLN("  GETLTDELAY: get delay between can-up measurements, in 1/10sec");
 //  WRITEDEBUGLN("  RESETDEF: reset settings back to defaults");
@@ -194,8 +200,18 @@ void ToninoSerial::setCalibration() {
   // parse input
   for (int c = 0; c < NR_CAL_VALUES; ++c) {
     char *arg = _sCmd.next();
-    cal[c] = atof(arg);
+		cal[c] = atof(arg);
+    if (isInvalidNumber(cal[c])) {
+      WRITEDEBUG("SETCAL ERR:inv num ");
+      WRITEDEBUGLN(cal[c]);
+      Serial.print("SETCAL ERROR");
+      Serial.print("\n");
+      return;
+    }
+    WRITEDEBUG(cal[c]);
+    WRITEDEBUG(" ");
   }
+  WRITEDEBUGLN();
   _tConfig->setCalibration(cal);
   Serial.print("SETCAL");
   Serial.print("\n");
@@ -215,17 +231,25 @@ void ToninoSerial::getCalibration() {
 
 // store scaling data from serial to local vars and EEPROM
 void ToninoSerial::setScaling() {
-  float cal[NR_SCALE_VALUES];
+  float scal[NR_SCALE_VALUES];
 
   // parse input
   WRITEDEBUG("[scale] ");
   for (int c = 0; c < NR_SCALE_VALUES; ++c) {
     char *arg = _sCmd.next();
-    cal[c] = atof(arg);
-    WRITEDEBUG(cal[c]);
+    scal[c] = atof(arg);
+    if (isInvalidNumber(scal[c])) {
+      WRITEDEBUG("SETSCALING ERR:inv num ");
+      WRITEDEBUGLN(scal[c]);
+      Serial.print("SETSCALING ERROR");
+      Serial.print("\n");
+      return;
+    }
+    WRITEDEBUG(scal[c]);
+    WRITEDEBUG(" ");
   }
   WRITEDEBUGLN();
-  _tConfig->setScaling(cal);
+  _tConfig->setScaling(scal);
   Serial.print("SETSCALING");
   Serial.print("\n");
 }
@@ -246,8 +270,17 @@ void ToninoSerial::getScaling() {
 void ToninoSerial::setBrightness() {
   // get from serial
   char *arg = _sCmd.next();
-  int8_t b = atoi(arg);
+  int32_t b = strtol(arg, NULL, 10);
+  if (isInvalidNumber(b)) {
+    WRITEDEBUG("SETBRIGHTNESS ERR:inv num ");
+    WRITEDEBUGLN(b);
+    Serial.print("SETBRIGHTNESS ERROR");
+    Serial.print("\n");
+    return;
+  }
   if (b < 0 || b > 15) {
+    WRITEDEBUG("SETBRIGHTNESS ERR:range ");
+    WRITEDEBUGLN(b);
     Serial.print("SETBRIGHTNESS ERROR");
     Serial.print("\n");
   } else {
@@ -268,8 +301,17 @@ void ToninoSerial::getBrightness() {
 void ToninoSerial::setSampling() {
   // get from serial
   char *arg = _sCmd.next();
-  int16_t sampling = atoi(arg);
-  if (sampling <= 0 || sampling >= 256) {
+  int32_t sampling = strtol(arg, NULL, 10);
+  if (isInvalidNumber(sampling)) {
+    WRITEDEBUG("SETSAMPLING ERR:inv num ");
+    WRITEDEBUGLN(sampling);
+    Serial.print("SETSAMPLING ERROR");
+    Serial.print("\n");
+    return;
+  }
+  if (sampling <= 0 || sampling > 100) {
+    WRITEDEBUG("SETSAMPLING ERR:range ");
+    WRITEDEBUGLN(sampling);
     Serial.print("SETSAMPLING ERROR");
     Serial.print("\n");
   } else {
@@ -290,8 +332,17 @@ void ToninoSerial::getSampling() {
 void ToninoSerial::setColorMode() {
   // get from serial
   char *arg = _sCmd.next();
-  int16_t cmode = atoi(arg);
-  if (cmode == 0 || cmode > COLOR_FULL) {
+  int32_t cmode = strtol(arg, NULL, 10);
+  if (isInvalidNumber(cmode)) {
+    WRITEDEBUG("SETCMODE ERR:inv ");
+    WRITEDEBUGLN(cmode);
+    Serial.print("SETCMODE ERROR");
+    Serial.print("\n");
+    return;
+  }
+  if (cmode <= 0 || cmode > COLOR_FULL) {
+    WRITEDEBUG("SETCMODE ERR:range ");
+    WRITEDEBUGLN(cmode);
     Serial.print("SETCMODE ERROR");
     Serial.print("\n");
   } else {
@@ -313,7 +364,7 @@ void ToninoSerial::setCheckCalInit() {
   // get from serial
   char *arg = _sCmd.next();
   int16_t iwc = atoi(arg);
-  if (iwc != 0 && iwc != 1) {
+  if (_sCmd.next() != NULL || (iwc != 0 && iwc != 1)) {
     Serial.print("SETCALINIT ERROR");
     Serial.print("\n");
   } else {
@@ -334,8 +385,17 @@ void ToninoSerial::getCheckCalInit() {
 void ToninoSerial::setDelayTillUpTest() {
   // get from serial
   char *arg = _sCmd.next();
-  int16_t ltdelay = atoi(arg);
+  int32_t ltdelay = strtol(arg, NULL, 10);
+  if (isInvalidNumber(ltdelay)) {
+    WRITEDEBUG("SETLTDELAY ERR:inv");
+    WRITEDEBUGLN(ltdelay);
+    Serial.print("SETLTDELAY ERROR");
+    Serial.print("\n");
+    return;
+  }
   if (ltdelay < 0 || ltdelay >= 256) {
+    WRITEDEBUG("SETLTDELAY ERR:range ");
+    WRITEDEBUGLN(ltdelay);
     Serial.print("SETLTDELAY ERROR");
     Serial.print("\n");
   } else {
