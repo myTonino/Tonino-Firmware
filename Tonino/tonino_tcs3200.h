@@ -8,7 +8,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2014, Paul Holleis, Marko Luther
+// Copyright (c) 2015, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Authors:  Paul Holleis, Marko Luther
@@ -92,14 +92,14 @@
 #define HIGH_PLATE 2  // second, high, bright, red, calibration plate
 
 // thresholds for detecting calibration plates at startup
-#define LOW_RED      2420 // brown disk red reading
-#define LOW_BLUE     1570 // brown disk blue reading
-#define HIGH_RED    13000 // red disk red reading
-#define HIGH_BLUE    3150 // red disk blue reading
+#define LOW_RED      2600 // brown disk red reading
+#define LOW_BLUE     1600 // brown disk blue reading
+#define HIGH_RED    15000 // red disk red reading
+#define HIGH_BLUE    3500 // red disk blue reading
 #define RED_RANGE_LOW    1300
-#define RED_RANGE_HIGH   5700
-#define BLUE_RANGE_LOW    800
-#define BLUE_RANGE_HIGH  1550
+#define RED_RANGE_HIGH   6000
+#define BLUE_RANGE_LOW   1000
+#define BLUE_RANGE_HIGH  1600
 #define LOW_TARGET  1.5   // brown disk target r/b value
 #define HIGH_TARGET 3.7   // red disk target r/b value
 

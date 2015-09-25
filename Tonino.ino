@@ -14,7 +14,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2014, Paul Holleis, Marko Luther
+// Copyright (c) 2015, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Author:  Paul Holleis, Marko Luther
@@ -44,7 +44,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ------------------------------------------------------------------------------------------
 
-#define VERSION "1 1 3"
+#define VERSION "1 1 5"
 
 #include <tonino.h>
 #include <tonino_lcd.h>
@@ -203,8 +203,8 @@ void loop() {
       }
       // short wait because it might already be dark before 
       // the can is fully placed on the surface
-      delay(500);
-      display.circle(1, 300);
+      delay(1000);
+      display.circle(2, 500);
       display.clear();
       wdt_reset();
       delay(100);

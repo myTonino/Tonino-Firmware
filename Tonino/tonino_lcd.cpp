@@ -7,7 +7,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2014, Paul Holleis, Marko Luther
+// Copyright (c) 2015, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Authors:  Paul Holleis, Marko Luther
