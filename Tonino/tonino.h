@@ -5,7 +5,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2015, Paul Holleis, Marko Luther
+// Copyright (c) 2016, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Authors:  Paul Holleis, Marko Luther
@@ -71,6 +71,8 @@
 #define DEFAULT_SCALE_3 -128.4090909
 #define DEFAULT_CAL_0 1.011949
 #define DEFAULT_CAL_1 -0.094599
+
+#define AVERAGE_TIME_SPAN 4000 // 4000=4sec; time in milliseconds after which averaging is restarted
 
 #if DODEBUG
 #define WRITEDEBUG(s) Serial.print(s)
