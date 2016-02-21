@@ -8,7 +8,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2015, Paul Holleis, Marko Luther
+// Copyright (c) 2016, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Authors:  Paul Holleis, Marko Luther
@@ -90,7 +90,7 @@ void TCS3200::init() {
 }
 
 // uses fitting data to compute T-value from sensorData
-int32_t TCS3200::fitValue(sensorData *sd, float* raw, uint8_t colorMode) {
+int32_t TCS3200::fitValue(sensorData *sd, float* raw, uint8_t colorMode, boolean* averaged) {
 #if DODEBUG
   WRITEDEBUG("scan:");
   for (int i = 0; i < 4; ++i) {
@@ -108,6 +108,17 @@ int32_t TCS3200::fitValue(sensorData *sd, float* raw, uint8_t colorMode) {
   float r = (float)sd->value[RED_IDX];
   float b = (float)sd->value[BLUE_IDX];
   float v = (r / b) * _cal[0] + _cal[1];
+  
+  // averaging
+  if (raw != NULL && *raw != 0.0 && abs(v - *raw) < AVERAGE_THRESHOLD) { // 0,011 correspond to about 1 Tonino value)
+      WRITEDEBUGLN("averaged:");
+      WRITEDEBUG(v);
+      WRITEDEBUG(SEPARATOR);
+      WRITEDEBUGLN(*raw);
+      v = (v + *raw) / 2.0;
+      *averaged = true;
+  }
+    
   WRITEDEBUG(v);
   WRITEDEBUG(SEPARATOR);
   // scale
@@ -123,7 +134,7 @@ int32_t TCS3200::fitValue(sensorData *sd, float* raw, uint8_t colorMode) {
 // makes the actual measurement with LEDs on
 // according to current sampling and color mode settings
 // displayAnim if true, the display shows a "progress bar"
-int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean ledon, boolean removeExtLight) {
+int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean ledon, boolean removeExtLight, boolean *averaged) {
   uint8_t animPos = 0;
   sensorData sd;
   for (uint8_t i = 0; i < 5; ++i) {
@@ -217,7 +228,7 @@ int32_t TCS3200::scan(float *raw, bool displayAnim, sensorData *outersd, boolean
 	} // if (removeExtLight)
 
   // calculate T-value according to current formula
-  int32_t tval = fitValue(&sd, raw, _colorMode);
+  int32_t tval = fitValue(&sd, raw, _colorMode, averaged);
   
   if (outersd != NULL) {
     for (int i = 0; i < 4; ++i) {
@@ -240,6 +251,7 @@ void TCS3200::sensorOff() {
 // returns 1 if the first, darker, 2 if the second, lighter calibration plate is detected
 // 0 otherwise; a quick sampling with LEDs switched on is conducted
 uint8_t TCS3200::isCalibrating() {
+  WRITEDEBUGLN("isCalib:");
   uint8_t samplingBackup = _readDiv;
   _readDiv = QUICK_SAMPLING;
 
@@ -255,6 +267,9 @@ uint8_t TCS3200::isCalibrating() {
   int32_t wval = readSingle();
   setFilter(BLUE_IDX); // blue sensor
   int32_t bval = readSingle();
+  
+  WRITEDEBUGLN(wval);
+  WRITEDEBUGLN(bval);
   
   sensorOff();
   _readDiv = samplingBackup;

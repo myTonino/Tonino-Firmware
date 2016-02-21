@@ -14,7 +14,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2015, Paul Holleis, Marko Luther
+// Copyright (c) 2016, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Author:  Paul Holleis, Marko Luther
@@ -44,7 +44,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ------------------------------------------------------------------------------------------
 
-#define VERSION "1 1 5"
+#define VERSION "1 1 6"
 
 #include <tonino.h>
 #include <tonino_lcd.h>
@@ -150,7 +150,7 @@ void setup() {
       }
     } else {
       // no calibration plate detected, directly make first scan
-      scanAndDisplay();
+      scanAndDisplay(NULL);
     }
   } else {
     display.clear();
@@ -176,6 +176,7 @@ boolean checkCommands() {
 void loop() {
   // store when last action was detected (for low power idle mode)
   uint32_t lastTimestamp = 0;
+  float lastRaw = 0.0; // last calibrated r/b result
   
   while(true) {
     // check this setting within the while loop as it could be changed during runtime
@@ -209,7 +210,11 @@ void loop() {
       wdt_reset();
       delay(100);
 
-      scanAndDisplay();
+      if ((millis() - lastTimestamp) > AVERAGE_TIME_SPAN) {
+        // AVERAGE_TIME_SPAN milliseconds after the last scan we deactivate the averaging
+        lastRaw = 0.0;
+      }
+      scanAndDisplay(&lastRaw);
 
       lastTimestamp = millis();
       // this call is mainly to potentially reset display brightness back to normal
@@ -217,6 +222,12 @@ void loop() {
     }
     delay(delayTillUpTest);
     
+    if ((millis() - lastTimestamp) > AVERAGE_TIME_SPAN) {
+        // AVERAGE_TIME_SPAN milliseconds after the last scan we deactivate the averaging
+        lastRaw = 0.0;
+        display.averaged(false); // clear the averaging indicator
+    }
+      
     lastTimestamp = checkLowPowerMode(false, lastTimestamp);
   }
 }
@@ -353,16 +364,21 @@ boolean calibrate() {
 }
 
 // make a full scan and display on LCD
-inline void scanAndDisplay() {
+inline void scanAndDisplay(float* lastRaw) {
+  boolean averaged = false; // indicates if readings got averaged with the lastRaw (the previous one)
+  
   // make a measurement with stored configuration, parameters:
-  // 1: NULL: not interested in raw values
+  // 1: lastRaw: passes lastRaw readings for averaging
   // 2: false: no display animation during scan
   // 3: NULL: not interested in raw values
   // 4: true: switch on LEDs
   // 5: false: no explicit external light removal
-  int32_t tval = colorSense.scan(NULL, false, NULL, true, false);
+  // 6: averaged: return flag that indicates that result got averaged
+  int32_t tval = colorSense.scan(lastRaw, false, NULL, true, false, &averaged);
+ 
 
   displayNum(tval);
+  display.averaged(averaged); // display the averaged indicator
 }
 
 // show the given number on the display if possible

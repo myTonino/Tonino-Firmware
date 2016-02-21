@@ -8,7 +8,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2015, Paul Holleis, Marko Luther
+// Copyright (c) 2016, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Authors:  Paul Holleis, Marko Luther
@@ -91,15 +91,18 @@
 #define LOW_PLATE  1  // first, low, dark, brown, calibration plate
 #define HIGH_PLATE 2  // second, high, bright, red, calibration plate
 
+// threshold up to wich averaging with previous value in scan/fitValue is enabled
+#define AVERAGE_THRESHOLD 0.044 // 0,011 correspond to about 1 value on the Tonino scale
+
 // thresholds for detecting calibration plates at startup
 #define LOW_RED      2600 // brown disk red reading
 #define LOW_BLUE     1600 // brown disk blue reading
 #define HIGH_RED    15000 // red disk red reading
-#define HIGH_BLUE    3500 // red disk blue reading
-#define RED_RANGE_LOW    1300
-#define RED_RANGE_HIGH   6000
-#define BLUE_RANGE_LOW   1000
-#define BLUE_RANGE_HIGH  1600
+#define HIGH_BLUE    3600 // red disk blue reading
+#define RED_RANGE_LOW    2100
+#define RED_RANGE_HIGH   7000
+#define BLUE_RANGE_LOW   1500
+#define BLUE_RANGE_HIGH  2100
 #define LOW_TARGET  1.5   // brown disk target r/b value
 #define HIGH_TARGET 3.7   // red disk target r/b value
 
@@ -127,7 +130,7 @@ class TCS3200 {
     // with the T-value at T_IDX
     // if ledon is true, LEDs are switched on during measurement
     // if removeExtLight is true, additional 'dark' measurement is done
-    int32_t scan(float *raw = NULL, bool displayAnim = false, sensorData *sd = NULL, boolean ledon = true, boolean removeExtLight = false);
+    int32_t scan(float *raw = NULL, bool displayAnim = false, sensorData *sd = NULL, boolean ledon = true, boolean removeExtLight = false, boolean *averaged = NULL);
     
     // switch sensor completely off
     void sensorOff();
@@ -185,7 +188,7 @@ class TCS3200 {
     // convert raw sensor data (in sd) into T-value using calibration and scaling
     // return value is T-value
     // if raw is not NULL, it contains the calibrated single value
-    int32_t fitValue(sensorData *sd, float* raw, uint8_t colorMode = COLOR_FULL);
+    int32_t fitValue(sensorData *sd, float* raw, uint8_t colorMode = COLOR_FULL, boolean* averaged = NULL);
 };
 
 #endif

@@ -7,7 +7,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2015, Paul Holleis, Marko Luther
+// Copyright (c) 2016, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Authors:  Paul Holleis, Marko Luther
@@ -105,6 +105,9 @@ class LCD {
     
     // clears the display (all segments to dark)
     void clear();
+    
+    // indicates averaging (light first dot)
+    void averaged(boolean dot);
     
     // shows a rotating circle; total time =repeat*timePerCircle
     void circle(uint8_t repeat = 1, uint16_t timePerCircle = 700);

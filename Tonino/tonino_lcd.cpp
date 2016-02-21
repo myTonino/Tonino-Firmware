@@ -7,7 +7,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2015, Paul Holleis, Marko Luther
+// Copyright (c) 2016, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Authors:  Paul Holleis, Marko Luther
@@ -294,6 +294,12 @@ void LCD::clear() {
   writeDigitRaw(1, 0);
   writeDigitRaw(3, 0);
   writeDigitRaw(4, 0);
+  writeDisplay();
+}
+
+// light up the dot of the first digit
+void LCD::averaged(boolean dot) {
+  writeDigitRaw(0, 0 | (dot << 7));
   writeDisplay();
 }
 
