@@ -16,6 +16,12 @@ Tonino Resources
 
 Version History
 ---------------
+
+- v1.1.6 Adds automatic averaging
+- v1.1.5 Calibration stability improved
+- v1.1.4 App alignment
+- v1.1.3 Increased stability
+- v1.1.2 Increased stability for calibration and EEPROM storage
 - v1.0.8 Improved calibration stability
 - v1.0.7 Improved external light suppression
 - v1.0.6 Adds UP notification during calibration
