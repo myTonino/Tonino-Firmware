@@ -110,13 +110,19 @@ int32_t TCS3200::fitValue(sensorData *sd, float* raw, uint8_t colorMode, boolean
   float v = (r / b) * _cal[0] + _cal[1];
   
   // averaging
-  if (raw != NULL && *raw != 0.0 && abs(v - *raw) < AVERAGE_THRESHOLD) { // 0,011 correspond to about 1 Tonino value)
-      WRITEDEBUGLN("averaged:");
-      WRITEDEBUG(v);
-      WRITEDEBUG(SEPARATOR);
-      WRITEDEBUGLN(*raw);
-      v = (v + *raw) / 2.0;
+  if (raw != NULL && *raw != 0.0 && abs(v - *raw) < AVERAGE_THRESHOLD) {
+    WRITEDEBUGLN("averaged:");
+    WRITEDEBUG(v);
+    WRITEDEBUG(SEPARATOR);
+    WRITEDEBUGLN(*raw);
+    v = (v + *raw) / 2.0;
+    if (averaged != NULL) {
       *averaged = true;
+    }
+  } else {
+    if (averaged != NULL) {
+      *averaged = false;
+    }
   }
     
   WRITEDEBUG(v);

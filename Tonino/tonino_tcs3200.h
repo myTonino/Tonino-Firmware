@@ -188,7 +188,7 @@ class TCS3200 {
     // convert raw sensor data (in sd) into T-value using calibration and scaling
     // return value is T-value
     // if raw is not NULL, it contains the calibrated single value
-    int32_t fitValue(sensorData *sd, float* raw, uint8_t colorMode = COLOR_FULL, boolean* averaged = NULL);
+    int32_t fitValue(sensorData *sd, float *raw, uint8_t colorMode = COLOR_FULL, boolean *averaged = NULL);
 };
 
 #endif

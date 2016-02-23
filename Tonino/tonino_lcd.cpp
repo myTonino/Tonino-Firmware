@@ -299,7 +299,7 @@ void LCD::clear() {
 
 // light up the dot of the first digit
 void LCD::averaged(boolean dot) {
-  writeDigitRaw(0, 0 | (dot << 7));
+  writeDigitRaw(0, (displaybuffer[0] & 0b01111111) | (dot << 7));
   writeDisplay();
 }
 
