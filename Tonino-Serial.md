@@ -445,7 +445,7 @@ Detailed Command Syntax
         --- | ---
         `GETCALINIT\n` | `GETCALINIT:1\n`
 
-* ** SETTARGET**  <a name="SETTARGET"></a>  
+* **SETTARGET**  <a name="SETTARGET"></a>  
     Set set scaling values
 
     * *Arguments:*
@@ -463,7 +463,7 @@ Detailed Command Syntax
         --- | ---
         `SETTARGET 100 5\n` | `SETTARGET\n`
 
-* ** GETTARGET**  <a name="GETTARGET"></a>  
+* **GETTARGET**  <a name="GETTARGET"></a>  
     Get scaling values
 
     * *Arguments:*: none
@@ -480,7 +480,7 @@ Detailed Command Syntax
         --- | ---
         `GETTARGET\n` | `GETTARGET:100 5\n`
 
-* ** SETSCALE**  <a name="SETSCALE"></a>  
+* **SETSCALE**  <a name="SETSCALE"></a>  
     Set scale name
 
     * *Arguments:*
@@ -497,7 +497,7 @@ Detailed Command Syntax
         --- | ---
         `SETSCALE Agtron\n` | `SETSCALE\n`
 
-* ** GETSCALE**  <a name="GETSCALE"></a>  
+* **GETSCALE**  <a name="GETSCALE"></a>  
     Get scale name
 
     * *Arguments:* none
@@ -514,7 +514,7 @@ Detailed Command Syntax
         --- | ---
         `GETSCALE\n` | `GETSCALE:Agtron\n`
 
-* ** SETNAME**  <a name="SETNAME"></a>  
+* **SETNAME**  <a name="SETNAME"></a>  
     Set user name
 
     * *Arguments:*
@@ -531,7 +531,7 @@ Detailed Command Syntax
         --- | ---
         `SETNAME Steve\n` | `SETNAME\n`
 
-* ** GETNAME**  <a name="GETNAME"></a>  
+* **GETNAME**  <a name="GETNAME"></a>  
     Get user name
 
     * *Arguments:* none
@@ -548,7 +548,7 @@ Detailed Command Syntax
         --- | ---
         `GETNAME\n` | `GETNAME:Steve\n`
 
-* ** SETDFLIP**  <a name="SETDFLIP"></a>  
+* **SETDFLIP**  <a name="SETDFLIP"></a>  
     Set display flip mode
 
     * *Arguments:*
@@ -565,7 +565,7 @@ Detailed Command Syntax
         --- | ---
         `SETDFLIP 1\n` | `SETDFLIP\n`
 
-* ** GETDFLIP**  <a name="GETDFLIP"></a>  
+* **GETDFLIP**  <a name="GETDFLIP"></a>  
     Get display flip mode
 
     * *Arguments:* none
