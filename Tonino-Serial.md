@@ -8,7 +8,7 @@ The Tonino firmware implements a simple protocol that can be used to adjust basi
 Serial Port Settings
 --------------------
 
-* baudrate: 115200
+* baudrate: 115200 (Classic Tonino), 57600 (Tiny Tonino)
 * bytesize: 8
 * parity: none
 * stopbits: 1
@@ -29,7 +29,7 @@ The following [EBNF](http://en.wikipedia.org/wiki/Extended_Backus–Naur_Form) p
 
 Each `cmdline` that is successfully processed is answered by a `result` with the same `cmd` and a potentially empty list of `numbers`.
 
-*Available Commands*
+*Commands supported by all Toninos*
 
 Commands `cmd =`  | Purpose
 --- | ---
@@ -39,9 +39,17 @@ Commands `cmd =`  | Purpose
 [`II_SCAN`](#II_SCAN) | scan and return raw values
 [`D_SCAN`](#D_SCAN) | scan unilluminated and return raw values
 [`SETCAL`](#SETCAL) | store calibration values
-[`GETCAL`](#GETCAL) | retrieve calibration values
 [`SETSCALING`](#SETSCALING) | set scaling values
 [`GETSCALING`](#GETSCALING) | get scaling values
+[`SETBRIGHTNESS`](#SETBRIGHTNESS) | set brightness
+[`GETBRIGHTNESS`](#GETBRIGHTNESS) | get brightness
+[`RESETDEF`](#RESETDEF) | reset to defaults
+
+*Additional commands supported only by the Classic Tonino*
+
+Commands `cmd =`  | Purpose
+--- | ---
+[`GETCAL`](#GETCAL) | retrieve calibration values
 [`SETSAMPLING`](#SETSAMPLING) | set sampling
 [`GETSAMPLING`](#GETSAMPLING) | get sampling
 [`SETCMODE`](#SETCMODE) | set color measure mode
@@ -50,9 +58,20 @@ Commands `cmd =`  | Purpose
 [`GETLTDELAY`](#GETLTDELAY) | get delay between can-up and scan
 [`SETCALINIT`](#SETCALINIT) | set check calibration at start
 [`GETCALINIT`](#GETCALINIT) | get check calibration at start
-[`SETBRIGHTNESS`](#SETBRIGHTNESS) | set brightness
-[`GETBRIGHTNESS`](#GETBRIGHTNESS) | get brightness
-[`RESETDEF`](#RESETDEF) | reset to defaults
+
+
+*Additional commands supported only by the Tiny Tonino*
+
+Commands `cmd =`  | Purpose
+--- | ---
+[`SETTARGET`](#SETTARGET) | set target and range
+[`GETTARGET`](#GETTARGET) | return target and range
+[`SETSCALE`](#SETSCALE) | set scale name
+[`GETSCALE`](#GETSCALE) | get scale name
+[`SETNAME`](#SETNAME) | set user name
+[`GETNAME`](#GETNAME) | get user name
+[`SETDFLIP`](#SETDFLIP) | set display flip
+[`GETDFLIP`](#GETDFLIP) | get display flip
 
 ---
 
@@ -66,6 +85,7 @@ Detailed Command Syntax
 
     * *Results:*
 
+        param | type
         --- | ---
         major | `int`
         minor | `int`
@@ -84,6 +104,7 @@ Detailed Command Syntax
 
     * *Results:*
 
+        param | type
         --- | ---
         T-value | `int`
 
@@ -100,6 +121,7 @@ Detailed Command Syntax
 
     * *Results:*
 
+        param | type
         --- | ---
         Internal value | `float`
 
@@ -116,6 +138,7 @@ Detailed Command Syntax
 
     * *Results:*
 
+        param | type
         --- | ---
         white | `float`
         red | `float`
@@ -136,6 +159,7 @@ Detailed Command Syntax
 
     * *Results:*
 
+        param | type
         --- | ---
         white | `float`
         red | `float`
@@ -148,11 +172,60 @@ Detailed Command Syntax
         --- | ---
         `D_SCAN\n` | `D_SCAN:30330 0 0 8980\n`
 
+
+* **SETBRIGHTNESS**  <a name="SETBRIGHTNESS"></a>  
+    Set brightness
+
+    * *Arguments:*
+
+        param | type
+        --- | ---
+        b | `int` [0,..,15]]
+
+    * *Results:*:  none
+
+    * *Example:* 
+
+        request | reply
+        --- | ---
+        `SETBRIGHTNESS 10\n` | `SETBRIGHTNESS\n`
+
+* **GETBRIGHTNESS**  <a name="GETBRIGHTNESS"></a>  
+    Get brightness
+
+    * *Arguments:* none
+
+    * *Results:* 
+
+        param | type
+        --- | ---
+        b | `int`     
+
+    * *Example:* 
+
+        request | reply
+        --- | ---
+        `GETBRIGHTNESS\n` | `GETBRIGHTNESS:10\n`
+
+* **RESETDEF**  <a name="RESETDEF"></a>  
+    Reset to defaults
+
+    * *Arguments:* none
+
+    * *Results:* none
+
+    * *Example:*
+
+        request | reply
+        --- | ---
+        `RESETDEF\n` | `RESETDEF\n`
+
 * **SETCAL**  <a name="SETCAL"></a>  
     Set calibration values
 
     * *Arguments:*
 
+        param | type
         --- | ---
         slope | `float`
         intercept | `float`
@@ -172,6 +245,7 @@ Detailed Command Syntax
 
     * *Results:*:
 
+        param | type
         --- | ---
         slope | `float`
         intercept | `float`
@@ -187,6 +261,7 @@ Detailed Command Syntax
 
     * *Arguments:* ax^3 + bx^2 + cx + d
 
+        param | type
         --- | ---
         a | `float`
         b | `float`
@@ -209,6 +284,7 @@ Detailed Command Syntax
 
     * *Results:* ax^3 + bx^2 + cx + d
 
+        param | type
         --- | ---
         a | `float`
         b | `float`
@@ -226,6 +302,7 @@ Detailed Command Syntax
 
     * *Arguments:*  sampling duration = 1sec / d
 
+        param | type
         --- | ---
         d | `int` [1,..,255]
 
@@ -244,6 +321,7 @@ Detailed Command Syntax
 
     * *Results:* sampling duration = 1sec / d
 
+        param | type
         --- | ---
         d | `int`
 
@@ -264,6 +342,7 @@ Detailed Command Syntax
        
         *e.g. 1+8=9 activates white and blue*  
 
+        param | type
         --- | ---
         c | `int`
 
@@ -288,6 +367,7 @@ Detailed Command Syntax
        
         *e.g. 1+8=9 returns white and blue*  
 
+        param | type
         --- | ---
         c | `int`
 
@@ -302,6 +382,7 @@ Detailed Command Syntax
 
     * *Arguments:* delay = d * 1/10sec
 
+        param | type
         --- | ---
         d | `int` [0,..,255]
 
@@ -320,6 +401,7 @@ Detailed Command Syntax
 
     * *Results:* delay = d * 1/10sec
 
+        param | type
         --- | ---
         d | `int`
 
@@ -334,6 +416,7 @@ Detailed Command Syntax
 
     * *Arguments:*
 
+        param | type
         --- | ---
         on | `int` (0 for false or 1 for true)
 
@@ -352,6 +435,7 @@ Detailed Command Syntax
 
     * *Results:* 
 
+        param | type
         --- | ---
         on | `int` (0 for false or 1 for true)
 
@@ -361,47 +445,139 @@ Detailed Command Syntax
         --- | ---
         `GETCALINIT\n` | `GETCALINIT:1\n`
 
-* **SETBRIGHTNESS**  <a name="SETBRIGHTNESS"></a>  
-    Set brightness
+* ** SETTARGET**  <a name="SETTARGET"></a>  
+    Set set scaling values
 
     * *Arguments:*
 
+        param | type
         --- | ---
-        b | `int` [0,..,15]]
+        target | `int`
+        range | `int`
 
-    * *Results:*:  none
-
-    * *Example:* 
-
-        request | reply
-        --- | ---
-        `SETBRIGHTNESS 10\n` | `SETBRIGHTNESS\n`
-
-* **GETBRIGHTNESS**  <a name="GETBRIGHTNESS"></a>  
-    Get brightness
-
-    * *Arguments:* none
-
-    * *Results:* 
-
-        --- | ---
-        b | `int`     
-
-    * *Example:* 
-
-        request | reply
-        --- | ---
-        `GETBRIGHTNESS\n` | `GETBRIGHTNESS:10\n`
-
-* **RESETDEF**  <a name="RESETDEF"></a>  
-    Reset to defaults
-
-    * *Arguments:* none
-
-    * *Results:* none
+    * *Results:*: none
 
     * *Example:*
 
         request | reply
         --- | ---
-        `RESETDEF\n` | `RESETDEF\n`
+        `SETTARGET 100 5\n` | `SETTARGET\n`
+
+* ** GETTARGET**  <a name="GETTARGET"></a>  
+    Get scaling values
+
+    * *Arguments:*: none
+
+    * *Results:*
+
+        param | type
+        --- | ---
+        target | `int`
+        range | `int`
+    * *Example:*
+
+        request | reply
+        --- | ---
+        `GETTARGET\n` | `GETTARGET:100 5\n`
+
+* ** SETSCALE**  <a name="SETSCALE"></a>  
+    Set scale name
+
+    * *Arguments:*
+
+        param | type
+        --- | ---
+        name | `str`
+
+    * *Results:*  none
+
+    * *Example:* 
+
+        request | reply
+        --- | ---
+        `SETSCALE Agtron\n` | `SETSCALE\n`
+
+* ** GETSCALE**  <a name="GETSCALE"></a>  
+    Get scale name
+
+    * *Arguments:* none
+
+    * *Results:* 
+
+        param | type
+        --- | ---
+        name | `str`
+
+    * *Example:*
+
+        request | reply
+        --- | ---
+        `GETSCALE\n` | `GETSCALE:Agtron\n`
+
+* ** SETNAME**  <a name="SETNAME"></a>  
+    Set user name
+
+    * *Arguments:*
+
+        param | type
+        --- | ---
+        name | `str`
+
+    * *Results:*  none
+
+    * *Example:* 
+
+        request | reply
+        --- | ---
+        `SETNAME Steve\n` | `SETNAME\n`
+
+* ** GETNAME**  <a name="GETNAME"></a>  
+    Get user name
+
+    * *Arguments:* none
+
+    * *Results:* 
+
+        param | type
+        --- | ---
+        name | `str`
+
+    * *Example:*
+
+        request | reply
+        --- | ---
+        `GETNAME\n` | `GETNAME:Steve\n`
+
+* ** SETDFLIP**  <a name="SETDFLIP"></a>  
+    Set display flip mode
+
+    * *Arguments:*
+
+        param | type
+        --- | ---
+        on | `int` (0 for false or 1 for true)
+
+    * *Results:*  none
+
+    * *Example:* 
+
+        request | reply
+        --- | ---
+        `SETDFLIP 1\n` | `SETDFLIP\n`
+
+* ** GETDFLIP**  <a name="GETDFLIP"></a>  
+    Get display flip mode
+
+    * *Arguments:* none
+
+    * *Results:* 
+
+        param | type
+        --- | ---
+        on | `int` (0 for false or 1 for true)
+
+    * *Example:*
+
+        request | reply
+        --- | ---
+        `GETDFLIP\n` | `GETDFLIP:1\n`
