@@ -85,7 +85,7 @@ Detailed Command Syntax
 
     * *Results:*
 
-        param | type
+        value | type
         --- | ---
         major | `int`
         minor | `int`
@@ -104,7 +104,7 @@ Detailed Command Syntax
 
     * *Results:*
 
-        param | type
+        value | type
         --- | ---
         T-value | `int`
 
@@ -121,7 +121,7 @@ Detailed Command Syntax
 
     * *Results:*
 
-        param | type
+        value | type
         --- | ---
         Internal value | `float`
 
@@ -138,7 +138,7 @@ Detailed Command Syntax
 
     * *Results:*
 
-        param | type
+        value | type
         --- | ---
         white | `float`
         red | `float`
@@ -159,7 +159,7 @@ Detailed Command Syntax
 
     * *Results:*
 
-        param | type
+        value | type
         --- | ---
         white | `float`
         red | `float`
@@ -197,7 +197,7 @@ Detailed Command Syntax
 
     * *Results:* 
 
-        param | type
+        value | type
         --- | ---
         b | `int`     
 
@@ -245,7 +245,7 @@ Detailed Command Syntax
 
     * *Results:*:
 
-        param | type
+        value | type
         --- | ---
         slope | `float`
         intercept | `float`
@@ -284,7 +284,7 @@ Detailed Command Syntax
 
     * *Results:* ax^3 + bx^2 + cx + d
 
-        param | type
+        value | type
         --- | ---
         a | `float`
         b | `float`
@@ -321,7 +321,7 @@ Detailed Command Syntax
 
     * *Results:* sampling duration = 1sec / d
 
-        param | type
+        value | type
         --- | ---
         d | `int`
 
@@ -367,7 +367,7 @@ Detailed Command Syntax
        
         *e.g. 1+8=9 returns white and blue*  
 
-        param | type
+        value | type
         --- | ---
         c | `int`
 
@@ -401,7 +401,7 @@ Detailed Command Syntax
 
     * *Results:* delay = d * 1/10sec
 
-        param | type
+        value | type
         --- | ---
         d | `int`
 
@@ -435,7 +435,7 @@ Detailed Command Syntax
 
     * *Results:* 
 
-        param | type
+        value | type
         --- | ---
         on | `int` (0 for false or 1 for true)
 
@@ -470,7 +470,7 @@ Detailed Command Syntax
 
     * *Results:*
 
-        param | type
+        value | type
         --- | ---
         target | `int`
         range | `int`
@@ -504,7 +504,7 @@ Detailed Command Syntax
 
     * *Results:* 
 
-        param | type
+        value | type
         --- | ---
         name | `str`
 
@@ -538,7 +538,7 @@ Detailed Command Syntax
 
     * *Results:* 
 
-        param | type
+        value | type
         --- | ---
         name | `str`
 
@@ -572,7 +572,7 @@ Detailed Command Syntax
 
     * *Results:* 
 
-        param | type
+        value | type
         --- | ---
         on | `int` (0 for false or 1 for true)
 
