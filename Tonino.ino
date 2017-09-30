@@ -14,7 +14,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2016, Paul Holleis, Marko Luther
+// Copyright (c) 2017, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Author:  Paul Holleis, Marko Luther
@@ -44,7 +44,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ------------------------------------------------------------------------------------------
 
-#define VERSION "1 1 6"
+#define VERSION "1 1 7"
 
 #include <tonino.h>
 #include <tonino_lcd.h>
@@ -63,10 +63,3 @@
 #include <FreqCount.h>
 // lib to access EEPROM, built-in, see http://arduino.cc/en/Reference/EEPROM
 #include <EEPROM.h>
-
-// low power library, built-in, see http://playground.arduino.cc/Learning/arduinoSleepCode
-#include <avr/power.h>  
-// watchdog timer
-#include <avr/wdt.h>
-// low power library, https://github.com/rocketscream/Low-Power, Version 1.30
-#include <LowPower.h>

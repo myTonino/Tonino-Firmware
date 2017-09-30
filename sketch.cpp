@@ -14,7 +14,7 @@
 //
 // *** BSD License ***
 // ------------------------------------------------------------------------------------------
-// Copyright (c) 2016, Paul Holleis, Marko Luther
+// Copyright (c) 2017, Paul Holleis, Marko Luther
 // All rights reserved.
 //
 // Author:  Paul Holleis, Marko Luther
@@ -45,7 +45,7 @@
 // ------------------------------------------------------------------------------------------
 
 
-#define VERSION "1 1 6"
+#define VERSION "1 1 7"
 
 #include <Arduino.h>
 
@@ -69,8 +69,6 @@
 
 // low power library, built-in, see http://playground.arduino.cc/Learning/arduinoSleepCode
 #include <avr/power.h>  
-// watchdog timer
-#include <avr/wdt.h>
 // low power library, https://github.com/rocketscream/Low-Power, Version 1.30
 #include <LowPower.h>
 
@@ -93,18 +91,7 @@ ToninoSerial tSerial = ToninoSerial(&colorSense, &display, &tConfig, VERSION);
 int8_t origBrightness = -1;
 
 
-void watchdogSetup(void) {
-  cli(); // disable all interrupts
-  wdt_reset(); // reset the WDT timer
-  // Enter Watchdog Configuration mode:
-  WDTCSR |= (1<<WDCE) | (1<<WDE);
-  // Set Watchdog settings:
-  WDTCSR = (1<<WDIE) | (1<<WDE) | (1<<WDP3) | (1<<WDP2) | (1<<WDP1) | (1<<WDP0);
-  sei();
-}
-
 boolean checkCommands() {
-  wdt_reset();
   return tSerial.checkCommands();
 }
 
@@ -288,16 +275,8 @@ void setup() {
   power_adc_disable(); // disable unused analog digital converter needed only for analogRead()
   power_spi_disable(); // disable unused Serial Peripheral Interface
   SPCR = 0;
-
-  // turn off brown-out enable in software
-  MCUCR = _BV (BODS) | _BV (BODSE);  // turn on brown-out enable select
-  MCUCR = _BV (BODS);  // this must be done within 4 clock cycles of above
   // ---- end low energy configuration
-  
-  // setup and start watchdog timer; will reset by calls
-  // to wdt_reset and checkCommands
-  watchdogSetup();
-  
+    
   // to visualize that the Arduino is running
   pinMode (13, OUTPUT);    // changed as per below
   digitalWrite(13, HIGH);
@@ -375,7 +354,6 @@ void loop() {
       delay(1000);
       display.circle(2, 500);
       display.clear();
-      wdt_reset();
       delay(100);
 
       if ((millis() - lastTimestamp) > AVERAGE_TIME_SPAN) {

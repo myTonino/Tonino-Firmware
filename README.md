@@ -17,6 +17,7 @@ Tonino Resources
 Version History
 ---------------
 
+- v1.1.7 Increases stability
 - v1.1.6 Adds automatic averaging
 - v1.1.5 Calibration stability improved
 - v1.1.4 App alignment
