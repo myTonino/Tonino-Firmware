@@ -70,8 +70,15 @@ Commands `cmd =`  | Purpose
 [`GETSCALE`](#GETSCALE) | get scale name
 [`SETNAME`](#SETNAME) | set user name
 [`GETNAME`](#GETNAME) | get user name
-[`SETDFLIP`](#SETDFLIP) | set display flip
-[`GETDFLIP`](#GETDFLIP) | get display flip
+[`SETDFLIP`](#SETDFLIP) | set display flip (removed in v2.2.0 and later)
+[`GETDFLIP`](#GETDFLIP) | get display flip (removed in v2.2.0 and later)
+
+*Additional commands supported only by the Tiny Tonino firmware v2.2.0 or later*
+
+Commands `cmd =`  | Purpose
+--- | ---
+[`SETDSCALE`](#SETDSCALE) | set default scale
+[`SETDSCALE `](#SETDSCALE) | get default scale
 
 ---
 
@@ -581,3 +588,37 @@ Detailed Command Syntax
         request | reply
         --- | ---
         `GETDFLIP\n` | `GETDFLIP:1\n`
+
+* **SETDSCALE**  <a name="SETDSCALE"></a>  
+    Set default scale
+
+    * *Arguments:*
+
+        param | type
+        --- | ---
+        scale | `int` (0 for Tonino or 1 for Agtron)
+
+    * *Results:*  none
+
+    * *Example:* 
+
+        request | reply
+        --- | ---
+        `SETDSCALE 1\n` | `SETDSCALE\n`
+
+* **GETDSCALE**  <a name="GETDSCALE"></a>  
+    Get default sale
+
+    * *Arguments:* none
+
+    * *Results:* 
+
+        value | type
+        --- | ---
+        scale | `int` (0 for Tonino or 1 for Agtron)
+
+    * *Example:*
+
+        request | reply
+        --- | ---
+        `GETDSCALE\n` | `GETDSCALE:1\n`
